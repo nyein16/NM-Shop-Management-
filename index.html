@@ -16,6 +16,7 @@
     <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
 
     <!-- html2canvas Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -159,6 +160,19 @@
         }
         .sidebar:not(.expanded) .sidebar-menu li span { display: none; }
         .sidebar.expanded .sidebar-menu li span { opacity: 1; pointer-events: auto; }
+
+        /* Sidebar ပိတ်ထားပြီး Noti ရှိမှသာ ပေါ်စေရန် ပြင်ဆင်ချက် */
+        .sidebar:not(.expanded) .sidebar-menu li#menu-admin-notis {
+            position: relative;
+        }
+        .sidebar:not(.expanded) #noti-badge-count:not([style*="display: none"]) {
+            display: inline-block !important;
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            font-size: 8px;
+            padding: 1px 4px;
+        }
 
         .sidebar-menu li:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
         .sidebar-menu li:hover i, .sidebar-menu li:hover span { color: #ffffff; }
@@ -622,6 +636,31 @@
     </div>
 
     <script>
+        // Register Service Worker for Push Notifications
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+            .then((registration) => {
+                console.log('Service Worker Registered Successfully:', registration);
+            })
+            .catch((err) => {
+                console.error('Service Worker Registration Failed:', err);
+            });
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then((permission) => {
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted.');
+                    }
+                });
+            }
+        }
+
+        window.addEventListener('load', () => {
+            requestNotificationPermission();
+        });
+
         const defaultLogoUrl = "ei_1792087020045-removebg-preview.png";
         const loginLogoUrl = "ei_1792087026911-removebg-preview.png";
 
@@ -788,6 +827,20 @@
                 users = [];
                 let todayStr = getFormattedDate(new Date());
 
+                snap.docChanges().forEach(change => {
+                    if (currentUser.role === 'admin' && (change.type === "added" || change.type === "modified")) {
+                        let uData = change.doc.data();
+                        if (uData.slip && uData.slip !== "") {
+                            if ('Notification' in window && Notification.permission === 'granted') {
+                                new Notification("Pro Plan Slip အသစ်ရောက်ရှိလာသည်", {
+                                    body: `${uData.name || uData.username} ထံမှ Payment Slip အသစ်ရောက်ရှိနေပါသည်။`,
+                                    icon: 'ei_1792087020045-removebg-preview.png'
+                                });
+                            }
+                        }
+                    }
+                });
+
                 snap.forEach(doc => {
                     let uData = doc.data();
                     
@@ -826,7 +879,6 @@
                         let logoEl = document.getElementById('app-logo-sidebar');
                         if(logoEl) logoEl.src = getActiveShopLogo();
 
-                        // Update sidebar menu badge dynamically if needed
                         updateAccDetailsSidebarBadge();
 
                         const activeLi = document.querySelector('.sidebar-menu li.active');
@@ -887,18 +939,17 @@
                         let todayStr = getFormattedDate(new Date());
                         let expDate = currentUser.proExpDate;
                         
-                        // Calculate remaining days
                         let diffTime = new Date(expDate) - new Date(todayStr);
                         let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
                         if(diffDays <= 3 && diffDays >= 0) {
                             badgeEl.innerHTML = `⚠️ ${diffDays}d left`;
                             badgeEl.style.display = 'inline-block';
-                            badgeEl.style.background = '#d97706'; // Orange warning
+                            badgeEl.style.background = '#d97706';
                         } else if(diffDays < 0) {
                             badgeEl.innerHTML = `Expired`;
                             badgeEl.style.display = 'inline-block';
-                            badgeEl.style.background = '#e11d48'; // Red expired
+                            badgeEl.style.background = '#e11d48';
                         } else {
                             badgeEl.style.display = 'none';
                         }
@@ -2044,7 +2095,7 @@
             const saleId = Date.now();
             const newSale = {
                 id: saleId,
-                invoiceNo: generateInvoiceNo(), // Dynamic Prefix + 9 Digits
+                invoiceNo: generateInvoiceNo(),
                 date: getFormattedDate(new Date()),
                 customer, phone: phone || '-', address: address || '-',
                 items: [...cart], subtotalAmount, discountPercent, discountVal,
