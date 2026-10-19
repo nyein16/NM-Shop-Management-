@@ -651,6 +651,23 @@
             });
         }
 
+        // Request FCM Token for background push notifications
+        async function requestFCMTokenForAdmin() {
+            try {
+                const messaging = firebase.messaging();
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const token = await messaging.getToken();
+                    if (token && currentUser) {
+                        await db.collection('users').doc(currentUser.username).update({ fcmToken: token });
+                        console.log('FCM Token saved successfully.');
+                    }
+                }
+            } catch (error) {
+                console.error('Error getting FCM token:', error);
+            }
+        }
+
         function requestNotificationPermission() {
             if ('Notification' in window) {
                 Notification.requestPermission().then((permission) => {
@@ -860,7 +877,6 @@
                 localStorage.setItem('nm_cached_users', JSON.stringify(users));
                 updateAdminNotiBadge();
 
-                // Staff အနေဖြင့် ဝင်ထားစဉ် ဆိုင်၏ Plan သည် free (Lifetime) သို့ ပြောင်းသွားပါက (သို့မဟုတ်) ဆိုင်/အကောင့် ဖျက်ခံရပါက အလိုအလျောက် Logout ဖြစ်စေရန်[span_6](start_span)[span_6](end_span)[span_7](start_span)[span_7](end_span)
                 if (currentUser.role === 'staff') {
                     let ownerUserObj = users.find(x => x.username === currentUser.ownerUser);
                     if (!ownerUserObj || ownerUserObj.plan === 'free') {
@@ -1094,6 +1110,7 @@
                 document.getElementById('app-logo-sidebar').src = getActiveShopLogo();
                 setupRealtimeListeners();
                 initAppForRole();
+                requestFCMTokenForAdmin();
             } else {
                 applyTheme('original');
             }
@@ -1187,6 +1204,7 @@
                     document.getElementById('app-logo-sidebar').src = getActiveShopLogo();
                     setupRealtimeListeners();
                     initAppForRole();
+                    requestFCMTokenForAdmin();
 
                     loginBtn.disabled = false;
                     loginBtn.innerHTML = `Login`;
