@@ -161,19 +161,6 @@
         .sidebar:not(.expanded) .sidebar-menu li span { display: none; }
         .sidebar.expanded .sidebar-menu li span { opacity: 1; pointer-events: auto; }
 
-        /* Sidebar ပိတ်ထားပြီး Noti ရှိမှသာ ပေါ်စေရန် ပြင်ဆင်ချက် */
-        .sidebar:not(.expanded) .sidebar-menu li#menu-admin-notis {
-            position: relative;
-        }
-        .sidebar:not(.expanded) #noti-badge-count:not([style*="display: none"]) {
-            display: inline-block !important;
-            position: absolute;
-            top: 6px;
-            right: 8px;
-            font-size: 8px;
-            padding: 1px 4px;
-        }
-
         .sidebar-menu li:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
         .sidebar-menu li:hover i, .sidebar-menu li:hover span { color: #ffffff; }
 
@@ -199,13 +186,28 @@
             box-shadow: 0 0 10px var(--active-glow);
         }
 
-        .sidebar-footer-action { margin-top: auto; display: flex; justify-content: center; padding-top: 10px; }
-        .refresh-circle-btn {
+        .sidebar-footer-action { 
+            margin-top: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            padding-top: 10px; 
+            align-items: center; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar.expanded .sidebar-footer-action {
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        .refresh-circle-btn, .sidebar-logout-btn {
             width: 36px; height: 36px; border-radius: 50%;
             background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);
             color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;
         }
-        .refresh-circle-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .refresh-circle-btn:hover, .sidebar-logout-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .sidebar-logout-btn { color: #f87171; border-color: rgba(248, 113, 113, 0.3); }
+        .sidebar-logout-btn:hover { background: rgba(248, 113, 113, 0.2); }
         .refresh-circle-btn.spin i { animation: spinAnim 0.5s linear; }
         @keyframes spinAnim { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -350,7 +352,6 @@
             display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
         }
 
-        /* Generic Custom Selection Modal - Theme Styled Popup */
         #custom-select-modal .custom-modal {
             border: 1px solid var(--primary-color);
             background: rgba(255, 255, 255, 0.98);
@@ -413,10 +414,10 @@
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="login-pass" class="form-control" placeholder="Enter password" autocomplete="new-password">
+                    <input type="password" id="login-pass" class="form-control" placeholder="Enter password (8 digits)" minlength="8" maxlength="8" autocomplete="new-password">
                 </div>
                 <div id="login-error-msg" style="color: #e11d48; font-size: 11px; font-weight: bold; margin-top: 4px; display: none;"></div>
-                <button type="button" onclick="handleLogin()" class="btn btn-primary" style="margin-top: 8px;">Login</button>
+                <button type="button" id="login-btn" onclick="handleLogin()" class="btn btn-primary" style="margin-top: 8px;">Login</button>
                 <div style="margin-top: 10px; font-size: 11px; color: #092c20; font-weight: bold;" id="login-label-text">Sign in to your account</div>
             </div>
         </div>
@@ -445,9 +446,12 @@
             <ul class="sidebar-menu" id="sidebar-menu-list">
             </ul>
 
-            <div class="sidebar-footer-action">
+            <div class="sidebar-footer-action" id="sidebar-footer-action-box">
                 <button id="refreshBtn" class="refresh-circle-btn" onclick="refreshAppData()" title="Refresh">
                     <i class="fa-solid fa-rotate"></i>
+                </button>
+                <button class="sidebar-logout-btn" id="sidebar-logout-btn-el" onclick="logoutApp()" title="Logout" style="display: none;">
+                    <i class="fa-solid fa-right-from-bracket"></i>
                 </button>
             </div>
         </nav>
@@ -507,9 +511,6 @@
                 <button type="button" onclick="closeStatusInfoModal()" style="background: none; border: none; color: white; font-size: 14px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="custom-modal-body" id="status-info-body" style="padding: 14px; display: flex; flex-direction: column; gap: 8px;">
-            </div>
-            <div class="custom-modal-footer">
-                <button type="button" class="btn btn-primary" onclick="closeStatusInfoModal()" style="width: auto; padding: 6px 16px;" id="status-info-close-btn">Close</button>
             </div>
         </div>
     </div>
@@ -632,6 +633,9 @@
             <div class="custom-modal-body">
                 <div id="custom-select-options-container" style="max-height: 250px; overflow-y: auto;"></div>
             </div>
+            <div class="custom-modal-footer" id="custom-select-footer" style="display: none;">
+                <button type="button" class="btn btn-success-custom" onclick="confirmDeliveryStatusChange()" style="width: auto; padding: 6px 16px;">Confirm</button>
+            </div>
         </div>
     </div>
 
@@ -701,9 +705,9 @@
                 admDash: "Admin Dashboard", admCreate: "Account Create", admAccounts: "Manage Accounts", admNotis: "Pro Plan Notifications", admSett: "Admin Settings",
                 proIncome: "Pro Plan Income", lifeIncome: "Lifetime Plan Income", totalAccs: "Total Created Accounts",
                 freeAccsCount: "Lifetime Plan Accounts", proAccsCount: "Pro Plan Accounts",
-                shopName: "Shop Name", phoneNo: "Phone Number", user: "Username", pass: "Password", createAccBtn: "Create Account",
+                shopName: "Shop Name", phoneNo: "Phone Number", user: "Username", pass: "Password (8 digits)", createAccBtn: "Create Account",
                 kpaySet: "KPay Details", waveSet: "Wave Details", saveSetBtn: "Save Settings",
-                changeAdminPass: "Change Admin Password", oldPass: "Old Password", newPass: "New Password", changePassBtn: "Change Password",
+                changeAdminPass: "Change Admin Password", oldPass: "Old Password", newPass: "New Password (8 digits)", changePassBtn: "Change Password",
                 loginLabel: "Sign in to your account",
                 dash: "Dashboard", inv: "Inventory", sell: "Sell", hist: "Sales History", custStatus: "Customer Status", sett: "Settings", proPlan: "Pro Plan", accDetails: "Account Details", staffs: "Staffs", staffSalesSum: "Staff Sales Summary",
                 welcome: "Summary", todaysales: "Today's Sales", todaycount: "Today's Transactions", todayprofit: "Today's Profit", itemtypes: "Item Types", totalstock: "Total Stock Items",
@@ -739,7 +743,7 @@
 
         let currentLang = 'en';
         let users = JSON.parse(localStorage.getItem('nm_cached_users')) || [];
-        let currentUser = JSON.parse(localStorage.getItem('nm_current_user')) || null;
+        let currentUser = JSON.parse(sessionStorage.getItem('nm_current_user')) || null;
         
         let defaultPricingPlans = [
             { id: 1, months: 1, price: 30000 },
@@ -766,7 +770,6 @@
 
         let unsubs = [];
 
-        // Dynamic Invoice No Generator Helper Function
         function generateInvoiceNo() {
             let shopName = getActiveShopName().trim();
             let prefix = "NM";
@@ -872,7 +875,7 @@
                         currentUser.name = updatedMe.name;
                         currentUser.phone = updatedMe.phone;
                         currentUser.theme = updatedMe.theme;
-                        localStorage.setItem('nm_current_user', JSON.stringify(currentUser));
+                        sessionStorage.setItem('nm_current_user', JSON.stringify(currentUser));
                         
                         if(currentUser.theme) applyTheme(currentUser.theme);
 
@@ -887,6 +890,14 @@
                         } else if(activeLi && activeLi.id === 'menu-user-details') {
                             renderUserDatailsPage();
                         }
+                    }
+                } else if(currentUser.role === 'staff') {
+                    let ownerUserObj = users.find(x => x.username === currentUser.ownerUser);
+                    if(ownerUserObj) {
+                        currentUser.theme = ownerUserObj.theme;
+                        currentUser.plan = ownerUserObj.plan;
+                        sessionStorage.setItem('nm_current_user', JSON.stringify(currentUser));
+                        if(currentUser.theme) applyTheme(currentUser.theme);
                     }
                 }
             }, err => console.error(err));
@@ -973,7 +984,6 @@
                 if(id === 'sales') renderSalesPage();
                 else if(id === 'history') renderHistoryPage();
                 else if(id === 'customer-status') renderCustomerStatusPage();
-                else if(id === 'settings') renderSettingsPage();
             } else {
                 if(id === 'dashboard') renderDashboard();
                 else if(id === 'inventory') renderInventoryPage();
@@ -1053,6 +1063,10 @@
             await fetchSystemDataOnce();
 
             if(currentUser) {
+                if(currentUser.role === 'staff') {
+                    let ownerUserObj = users.find(x => x.username === currentUser.ownerUser);
+                    if(ownerUserObj && ownerUserObj.theme) currentUser.theme = ownerUserObj.theme;
+                }
                 applyTheme(currentUser.theme || 'original');
                 document.getElementById('auth-overlay').style.display = 'none';
                 document.getElementById('main-app-wrapper').style.display = 'flex';
@@ -1075,6 +1089,7 @@
             const u = document.getElementById('login-user').value.trim();
             const p = document.getElementById('login-pass').value.trim();
             const errBox = document.getElementById('login-error-msg');
+            const loginBtn = document.getElementById('login-btn');
             errBox.style.display = 'none';
 
             if(!u || !p) { 
@@ -1083,27 +1098,31 @@
                 return; 
             }
 
+            if(p.length !== 8) {
+                errBox.innerText = 'Password must be exactly 8 digits/characters.';
+                errBox.style.display = 'block';
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Loading...`;
+
             await fetchSystemDataOnce();
 
             let found = users.find(x => x.username === u && x.pass === p);
+            let loggedStaff = null;
+
             if(found) {
                 if(found.role === 'shop' && found.status !== 'approved') {
                     errBox.innerText = 'Account pending approval.';
                     errBox.style.display = 'block';
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = `Login`;
                     return;
                 }
                 currentUser = found;
-                applyTheme(currentUser.theme || 'original');
-                localStorage.setItem('nm_current_user', JSON.stringify(currentUser));
-                
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('main-app-wrapper').style.display = 'flex';
-                document.getElementById('app-logo-sidebar').src = getActiveShopLogo();
-                setupRealtimeListeners();
-                initAppForRole();
             } else {
                 let allShopUsers = users.filter(x => x.role === 'shop');
-                let loggedStaff = null;
                 for(let shop of allShopUsers) {
                     const staffSnap = await db.collection('shops').doc(shop.username).collection('staffs').get();
                     let staffs = [];
@@ -1117,25 +1136,40 @@
                 }
                 if(loggedStaff) {
                     currentUser = loggedStaff;
+                }
+            }
+
+            if(currentUser) {
+                loginBtn.innerHTML = `<i class="fa-solid fa-check"></i> Success!`;
+                loginBtn.style.background = '#10b981';
+
+                setTimeout(() => {
                     applyTheme(currentUser.theme || 'original');
-                    localStorage.setItem('nm_current_user', JSON.stringify(currentUser));
+                    sessionStorage.setItem('nm_current_user', JSON.stringify(currentUser));
                     
                     document.getElementById('auth-overlay').style.display = 'none';
                     document.getElementById('main-app-wrapper').style.display = 'flex';
                     document.getElementById('app-logo-sidebar').src = getActiveShopLogo();
                     setupRealtimeListeners();
                     initAppForRole();
-                } else {
-                    errBox.innerText = 'Invalid Username or Password.';
-                    errBox.style.display = 'block';
-                }
+
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = `Login`;
+                    loginBtn.style.background = '';
+                }, 600);
+
+            } else {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = `Login`;
+                errBox.innerText = 'Invalid Username or Password.';
+                errBox.style.display = 'block';
             }
         }
 
         function logoutApp() {
             unsubs.forEach(unsub => unsub());
             currentUser = null;
-            localStorage.removeItem('nm_current_user');
+            sessionStorage.removeItem('nm_current_user');
             
             applyTheme('original');
 
@@ -1151,6 +1185,15 @@
             const dict = langData[currentLang];
             
             document.getElementById('login-label-text').innerText = dict.loginLabel;
+            
+            const logoutBtnEl = document.getElementById('sidebar-logout-btn-el');
+            if(logoutBtnEl) {
+                if(currentUser.role === 'staff') {
+                    logoutBtnEl.style.display = 'flex';
+                } else {
+                    logoutBtnEl.style.display = 'none';
+                }
+            }
             
             if(currentUser.role === 'admin') {
                 document.getElementById('sidebar-brand-title').innerText = 'Admin Master';
@@ -1178,7 +1221,6 @@
                     <li id="menu-sales" onclick="switchPage('sales')"><i class="fa-solid fa-cash-register"></i> <span>${dict.sell}</span></li>
                     <li id="menu-history" onclick="switchPage('history')"><i class="fa-solid fa-file-lines"></i> <span>${dict.hist}</span></li>
                     ${isPro && isStaffAdmin ? `<li id="menu-customer-status" onclick="switchPage('customer-status')"><i class="fa-solid fa-truck-fast"></i> <span>${dict.custStatus}</span></li>` : ''}
-                    <li id="menu-settings" onclick="switchPage('settings')"><i class="fa-solid fa-gear"></i> <span>${dict.sett}</span></li>
                 `;
                 switchPage(activePageId || 'sales');
             } else {
@@ -1221,7 +1263,6 @@
                 if(pageId === 'sales') renderSalesPage();
                 else if(pageId === 'history') renderHistoryPage();
                 else if(pageId === 'customer-status') renderCustomerStatusPage();
-                else if(pageId === 'settings') renderSettingsPage();
             } else {
                 if(pageId === 'dashboard') renderDashboard();
                 else if(pageId === 'inventory') renderInventoryPage();
@@ -1299,7 +1340,7 @@
                     <div class="form-group"><label>${dict.shopName}</label><input type="text" id="adm-create-name" class="form-control" placeholder="${dict.shopName}"></div>
                     <div class="form-group"><label>${dict.phoneNo}</label><input type="text" id="adm-create-phone" class="form-control" placeholder="09xxxxxxxxx"></div>
                     <div class="form-group"><label>${dict.user}</label><input type="text" id="adm-create-user" class="form-control" placeholder="${dict.user}"></div>
-                    <div class="form-group"><label>${dict.pass}</label><input type="password" id="adm-create-pass" class="form-control" placeholder="${dict.pass}"></div>
+                    <div class="form-group"><label>${dict.pass}</label><input type="password" id="adm-create-pass" class="form-control" placeholder="8 digits password" minlength="8" maxlength="8"></div>
                     <button type="button" onclick="adminCreateAccountSubmit()" class="btn btn-success-custom" style="margin-top:6px;"><i class="fa-solid fa-check"></i> ${dict.createAccBtn}</button>
                 </div>
             `;
@@ -1311,6 +1352,7 @@
             const username = document.getElementById('adm-create-user').value.trim();
             const pass = document.getElementById('adm-create-pass').value.trim();
             if(!name || !phone || !username || !pass) { showCustomModal('Please fill in all fields.', 'Warning'); return; }
+            if(pass.length !== 8) { showCustomModal('Password must be exactly 8 digits.', 'Warning'); return; }
             if(users.some(x => x.username === username)) { showCustomModal('Username already exists.', 'Warning'); return; }
 
             const newUser = { id: Date.now(), name, phone, username, pass, role: 'shop', status: 'approved', plan: 'free', slip: null, profilePic: null, theme: 'original' };
@@ -1435,8 +1477,8 @@
             let u = users.find(x => x.username === username);
             if(!u) return;
             document.getElementById('modal-message').innerHTML = `
-                <div style="margin-bottom: 8px;"><b>${u.name} (${u.username})</b> - Set new password:</div>
-                <input type="password" id="admin-user-reset-pass" class="form-control" placeholder="New Password">
+                <div style="margin-bottom: 8px;"><b>${u.name} (${u.username})</b> - Set new password (8 digits):</div>
+                <input type="password" id="admin-user-reset-pass" class="form-control" placeholder="New Password (8 digits)" minlength="8" maxlength="8">
             `;
             document.getElementById('modal-title').innerHTML = `<span><i class="fa-solid fa-key"></i> Reset Password</span>`;
             document.getElementById('custom-modal-footer').innerHTML = `
@@ -1448,7 +1490,7 @@
 
         async function executeUserPassReset(username) {
             let passInput = document.getElementById('admin-user-reset-pass').value.trim();
-            if(!passInput) { alert('Please enter password.'); return; }
+            if(!passInput || passInput.length !== 8) { alert('Password must be exactly 8 digits.'); return; }
             await db.collection('users').doc(username).update({ pass: passInput });
             await fetchSystemDataOnce();
             closeCustomModal();
@@ -1607,11 +1649,15 @@
 
                 <div class="card">
                     <div class="card-title"><i class="fa-solid fa-key"></i> ${dict.changeAdminPass}</div>
-                    <div class="form-group"><label>${dict.oldPass}</label><input type="password" id="admin-old-pass" class="form-control"></div>
-                    <div class="form-group"><label>${dict.newPass}</label><input type="password" id="admin-new-pass" class="form-control"></div>
+                    <div class="form-group"><label>${dict.oldPass}</label><input type="password" id="admin-old-pass" class="form-control" minlength="8" maxlength="8"></div>
+                    <div class="form-group"><label>${dict.newPass}</label><input type="password" id="admin-new-pass" class="form-control" minlength="8" maxlength="8"></div>
                     <button type="button" onclick="changeAdminPassword()" class="btn btn-success-custom" style="margin-top:6px;">${dict.changePassBtn}</button>
                 </div>
-                <div class="card"><button type="button" onclick="logoutApp()" class="btn btn-danger"><i class="fa-solid fa-right-from-bracket"></i> ${dict.logout}</button></div>
+
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-right-from-bracket"></i> Logout Account</div>
+                    <button type="button" onclick="logoutApp()" class="btn btn-danger" style="background: rgba(248, 113, 113, 0.2); color: #dc2626; border-color: rgba(248, 113, 113, 0.4);"><i class="fa-solid fa-right-from-bracket"></i> ${dict.logout}</button>
+                </div>
             `;
         }
 
@@ -1658,10 +1704,11 @@
         async function changeAdminPassword() {
             let oldP = document.getElementById('admin-old-pass').value;
             let newP = document.getElementById('admin-new-pass').value;
+            if(newP.length !== 8) { showCustomModal('New password must be exactly 8 digits.', 'Warning'); return; }
             if(oldP !== currentUser.pass) { showCustomModal('Incorrect old password.', 'Error'); return; }
             currentUser.pass = newP;
             await db.collection('users').doc(currentUser.username).update({ pass: newP });
-            localStorage.setItem('nm_current_user', JSON.stringify(currentUser));
+            sessionStorage.setItem('nm_current_user', JSON.stringify(currentUser));
             showCustomModal('Password changed successfully.', 'Success');
         }
 
@@ -2100,6 +2147,8 @@
                 customer, phone: phone || '-', address: address || '-',
                 items: [...cart], subtotalAmount, discountPercent, discountVal,
                 totalAmount: finalAmount, totalProfit,
+                originalTotalAmount: finalAmount,
+                originalTotalProfit: totalProfit,
                 deliveryStatus: 'order',
                 createdBy: currentUser.name || currentUser.username,
                 statusHistory: [{
@@ -2127,14 +2176,14 @@
             const dict = langData[currentLang];
             const curr = dict.currency;
             const contentArea = document.getElementById('content-area-container');
-            const isPro = currentUser.plan === 'pro';
+            const isStaff = currentUser.role === 'staff';
 
             let dateText = appliedDateFilter ? appliedDateFilter : todayDefaultStr;
 
             contentArea.innerHTML = `
                 <div class="page-title-box" style="flex-direction: row; justify-content: space-between; align-items: center;">
                     <h2><i class="fa-solid fa-file-lines" style="color: var(--accent-glow);"></i> ${dict.histtitle}</h2>
-                    <span id="total-profit-badge" class="badge badge-green"><i class="fa-solid fa-chart-line"></i> ${dict.totalprofitbadge} 0 ${curr}</span>
+                    ${!isStaff ? `<span id="total-profit-badge" class="badge badge-green"><i class="fa-solid fa-chart-line"></i> ${dict.totalprofitbadge} 0 ${curr}</span>` : ''}
                 </div>
                 <div class="card">
                     <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 5px;"><i class="fa-solid fa-magnifying-glass"></i> ${dict.searchfilter}</div>
@@ -2149,8 +2198,8 @@
                 </div>
                 <div class="table-box">
                     <table>
-                        <thead><tr><th>${dict.thNo}</th><th>Invoice No</th><th>${dict.thDate}</th><th>${dict.thCust}</th><th>${dict.thContact}</th><th>${dict.thItems}</th><th>${dict.thAmount}</th>${isPro ? `<th>Delivery Status</th>` : ''}<th>${dict.thAction}</th></tr></thead>
-                        <tbody id="history-table-body"><tr><td colspan="${isPro ? 9 : 8}" style="text-align: center; color: var(--text-muted); padding: 12px;">${dict.noHist}</td></tr></tbody>
+                        <thead><tr><th>${dict.thNo}</th><th>Invoice No</th><th>${dict.thDate}</th><th>${dict.thCust}</th><th>${dict.thContact}</th><th>${dict.thItems}</th><th>${dict.thAmount}</th><th>${dict.thAction}</th></tr></thead>
+                        <tbody id="history-table-body"><tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 12px;">${dict.noHist}</td></tr></tbody>
                     </table>
                 </div>
                 <div id="history-total-summary" style="margin-top: 10px; background: #fff; padding: 10px 14px; border-radius: var(--ios-card-radius); display: flex; justify-content: space-between; align-items: center; font-weight: bold; border: 1px solid #e2e8f0;">
@@ -2168,7 +2217,7 @@
             if(!tbody) return;
             const invFilter = (document.getElementById('history-inv-filter')?.value || '').trim().toLowerCase();
             const nameFilter = (document.getElementById('history-name-filter')?.value || '').trim().toLowerCase();
-            const isPro = currentUser.plan === 'pro';
+            const isStaff = currentUser.role === 'staff';
             
             let filtered = sales;
             if (appliedDateFilter) {
@@ -2184,45 +2233,27 @@
                 totalAmountSum += (Number(s.totalAmount) || 0);
             });
             const curr = dict.currency;
-            const badge = document.getElementById('total-profit-badge');
-            if(badge) badge.innerHTML = `<i class="fa-solid fa-chart-line"></i> ${dict.totalprofitbadge} ${totalProfitSum.toLocaleString()} ${curr}`;
+            
+            if(!isStaff) {
+                const badge = document.getElementById('total-profit-badge');
+                if(badge) badge.innerHTML = `<i class="fa-solid fa-chart-line"></i> ${dict.totalprofitbadge} ${totalProfitSum.toLocaleString()} ${curr}`;
+            }
             
             let sumDisplay = document.getElementById('history-total-amount-sum');
             if(sumDisplay) sumDisplay.innerText = `${totalAmountSum.toLocaleString()} ${curr}`;
 
             if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${isPro ? 9 : 8}" style="text-align: center; color: var(--text-muted); padding: 12px;">${dict.noHist}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 12px;">${dict.noHist}</td></tr>`;
                 return;
             }
 
-            let canEditStatus = true;
-            if(currentUser.role === 'staff' && currentUser.staffType !== 'staff_admin') {
-                canEditStatus = false;
-            }
-
             tbody.innerHTML = filtered.map((s, index) => {
-                let currentStatus = s.deliveryStatus || 'order';
-                let statusBadgeHtml = '';
-                if(isPro) {
-                    let badgeColor = 'badge-orange';
-                    if(currentStatus === 'complete') badgeColor = 'badge-green';
-                    else if(currentStatus === 'return') badgeColor = 'badge-danger';
-                    else if(currentStatus === 'sent_out') badgeColor = 'badge-purple';
-                    
-                    if(canEditStatus) {
-                        statusBadgeHtml = `<td><span class="badge ${badgeColor}" style="cursor: pointer;" onclick="openDeliveryStatusModal(${s.id}, '${currentStatus}')">${currentStatus.toUpperCase()} <i class="fa-solid fa-pen" style="font-size:9px; margin-left:3px;"></i></span></td>`;
-                    } else {
-                        statusBadgeHtml = `<td><span class="badge ${badgeColor}">${currentStatus.toUpperCase()}</span></td>`;
-                    }
-                }
-
                 return `
                     <tr>
                         <td>${index + 1}</td><td><b>${s.invoiceNo}</b></td><td>${getFormattedDate(s.date)}</td><td><b>${s.customer}</b></td>
                         <td>${s.phone || '-'}<br><span style="font-size: 9px; color: var(--text-muted);">${s.address || '-'}</span></td>
                         <td>${s.items.map(i => `${i.name} (${i.qty})`).join(', ')}</td>
                         <td style="font-weight: bold; color: var(--accent-glow);">${(Number(s.totalAmount) || 0).toLocaleString()} ${curr}</td>
-                        ${statusBadgeHtml}
                         <td>
                             <button onclick="showInvoiceModal(getSales().find(x => x.id === ${s.id}))" class="btn btn-primary" style="padding: 3px 8px; font-size: 10px; width: auto;"><i class="fa-solid fa-receipt"></i> Invoice</button>
                             ${currentUser.role !== 'staff' ? `<button onclick="confirmDeleteSale(${s.id})" class="btn-danger"><i class="fa-solid fa-trash"></i> ${dict.delete}</button>` : ''}
@@ -2233,17 +2264,20 @@
         }
 
         let currentEditingSaleId = null;
+        let currentEditingOptions = [];
+        let tempDeliveryStatus = '';
+
         function openDeliveryStatusModal(saleId, currentStatus) {
             currentEditingSaleId = saleId;
-            let options = [];
+            tempDeliveryStatus = currentStatus;
             if(currentStatus === 'order' || currentStatus === 'package') {
-                options = [
+                currentEditingOptions = [
                     { val: 'order', text: 'Order' },
                     { val: 'package', text: 'Package' },
                     { val: 'sent_out', text: 'Sent Out' }
                 ];
             } else {
-                options = [
+                currentEditingOptions = [
                     { val: 'sent_out', text: 'Sent Out' },
                     { val: 'complete', text: 'Complete' },
                     { val: 'return', text: 'Return' }
@@ -2251,40 +2285,99 @@
             }
 
             document.getElementById('custom-select-title').innerHTML = `<span><i class="fa-solid fa-truck-fast"></i> Change Delivery Status</span>`;
-            const container = document.getElementById('custom-select-options-container');
-            container.innerHTML = options.map(opt => `
-                <div class="custom-select-option ${currentStatus === opt.val ? 'selected' : ''}" onclick="updateSaleDeliveryStatus('${opt.val}')">
-                    <span>${opt.text}</span>
-                    ${currentStatus === opt.val ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-regular fa-circle"></i>'}
-                </div>
-            `).join('');
+            
+            let footer = document.getElementById('custom-select-footer');
+            if(footer) footer.style.display = 'flex';
 
+            renderDeliveryStatusChoices();
             document.getElementById('custom-select-modal').classList.add('show');
         }
 
-        async function updateSaleDeliveryStatus(newStatus) {
-            if(!currentEditingSaleId) return;
+        function renderDeliveryStatusChoices() {
+            const container = document.getElementById('custom-select-options-container');
+            container.innerHTML = currentEditingOptions.map(opt => `
+                <div class="custom-select-option ${tempDeliveryStatus === opt.val ? 'selected' : ''}" onclick="tempSelectDeliveryStatus('${opt.val}')">
+                    <span>${opt.text}</span>
+                    ${tempDeliveryStatus === opt.val ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-regular fa-circle"></i>'}
+                </div>
+            `).join('');
+        }
+
+        function tempSelectDeliveryStatus(val) {
+            tempDeliveryStatus = val;
+            renderDeliveryStatusChoices();
+        }
+
+        async function confirmDeliveryStatusChange() {
+            if(!currentEditingSaleId || !tempDeliveryStatus) return;
             let owner = getOwnerName();
             let saleRef = db.collection('shops').doc(owner).collection('sales').doc(String(currentEditingSaleId));
             
             let docSnap = await saleRef.get();
             if(docSnap.exists) {
                 let saleData = docSnap.data();
-                let history = saleData.statusHistory || [];
-                history.push({
-                    status: newStatus,
-                    updatedBy: currentUser.name || currentUser.username,
-                    updatedAt: new Date().toLocaleString()
-                });
+                let oldStatus = saleData.deliveryStatus || 'order';
 
-                await saleRef.update({
-                    deliveryStatus: newStatus,
-                    statusHistory: history
-                });
+                if(oldStatus !== tempDeliveryStatus) {
+                    let inventory = getInventory();
+                    let batch = db.batch();
+
+                    if(tempDeliveryStatus === 'return' && oldStatus !== 'return') {
+                        if(saleData.items) {
+                            saleData.items.forEach(c => {
+                                let inv = inventory.find(i => i.id == c.id);
+                                if(inv) {
+                                    inv.qty += (Number(c.qty) || 0);
+                                    let invRef = db.collection('shops').doc(owner).collection('inventory').doc(String(inv.id));
+                                    batch.set(invRef, inv);
+                                }
+                            });
+                        }
+                        saleData.originalTotalProfit = saleData.originalTotalProfit !== undefined ? saleData.originalTotalProfit : saleData.totalProfit;
+                        saleData.originalTotalAmount = saleData.originalTotalAmount !== undefined ? saleData.originalTotalAmount : saleData.totalAmount;
+                        saleData.totalProfit = 0;
+                        saleData.totalAmount = 0;
+                    }
+                    else if(oldStatus === 'return' && tempDeliveryStatus !== 'return') {
+                        if(saleData.items) {
+                            saleData.items.forEach(c => {
+                                let inv = inventory.find(i => i.id == c.id);
+                                if(inv) {
+                                    inv.qty -= (Number(c.qty) || 0);
+                                    let invRef = db.collection('shops').doc(owner).collection('inventory').doc(String(inv.id));
+                                    batch.set(invRef, inv);
+                                }
+                            });
+                        }
+                        if(saleData.originalTotalProfit !== undefined) {
+                            saleData.totalProfit = saleData.originalTotalProfit;
+                            saleData.totalAmount = saleData.originalTotalAmount;
+                        }
+                    }
+
+                    let history = saleData.statusHistory || [];
+                    history.push({
+                        status: tempDeliveryStatus,
+                        updatedBy: currentUser.name || currentUser.username,
+                        updatedAt: new Date().toLocaleString()
+                    });
+
+                    saleData.deliveryStatus = tempDeliveryStatus;
+                    saleData.statusHistory = history;
+
+                    batch.set(saleRef, saleData);
+                    await batch.commit();
+                }
             }
 
             closeCustomSelectModal();
             refreshCurrentPageView();
+        }
+
+        function closeCustomSelectModal() {
+            document.getElementById('custom-select-modal').classList.remove('show');
+            let footer = document.getElementById('custom-select-footer');
+            if(footer) footer.style.display = 'none';
         }
 
         function renderCustomerStatusPage() {
@@ -2418,22 +2511,29 @@
                 updatedAt: sale.date || '-'
             }];
 
-            let invoiceBy = sale.createdBy || currentUser.name || currentUser.username;
-
             let bodyHtml = `
                 <div style="font-size: 13px; font-weight: bold; color: var(--primary-color); margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
                     <i class="fa-solid fa-user"></i> Customer: ${sale.customer || '-'}
                 </div>
-                <div style="font-size: 11px; font-weight: bold; color: #4a5568; margin-bottom: 8px;">
-                    <i class="fa-solid fa-user-pen"></i> Created By: <span style="color: var(--accent-glow);">${invoiceBy}</span>
-                </div>
-            ` + history.map(h => `
-                <div style="background: rgba(45, 106, 79, 0.08); padding: 8px 10px; border-radius: 8px; border-left: 3px solid var(--accent-glow); margin-bottom: 6px;">
-                    <div style="font-weight: bold; color: var(--primary-color); text-transform: uppercase;">Status: ${h.status}</div>
-                    <div style="font-size: 10px; color: #4a5568; margin-top: 2px;">Updated By: <b>${h.updatedBy}</b></div>
-                    <div style="font-size: 9px; color: #71717a;">Time: ${h.updatedAt}</div>
-                </div>
-            `).join('');
+            ` + history.map(h => {
+                let stLower = (h.status || 'order').toLowerCase();
+                let titleLabel = "Order by";
+                if(stLower === 'complete') titleLabel = "Completed by";
+                else if(stLower === 'return') titleLabel = "Returned by";
+                else if(stLower === 'sent_out') titleLabel = "Sent out by";
+                else if(stLower === 'package') titleLabel = "Packaged by";
+                else if(stLower === 'order') titleLabel = "Order by";
+
+                let formattedTitle = titleLabel;
+
+                return `
+                    <div style="background: rgba(45, 106, 79, 0.08); padding: 8px 10px; border-radius: 8px; border-left: 3px solid var(--accent-glow); margin-bottom: 6px;">
+                        <div style="font-weight: bold; font-size: 13px; color: #1c2826; margin-top: 3px;">${formattedTitle}</div>
+                        <div style="font-size: 10px; color: #2d3748; font-weight: bold;">${h.updatedBy}</div>
+                        <div style="font-size: 9px; color: #71717a; margin-top: 2px;">${h.updatedAt}</div>
+                    </div>
+                `;
+            }).join('');
 
             document.getElementById('status-info-body').innerHTML = bodyHtml;
             document.getElementById('status-info-modal').classList.add('show');
@@ -2452,14 +2552,16 @@
                 let batch = db.batch();
 
                 if(s) {
-                    s.items.forEach(c => {
-                        let inv = inventory.find(i => i.id == c.id);
-                        if(inv) {
-                            inv.qty += c.qty;
-                            let invRef = db.collection('shops').doc(owner).collection('inventory').doc(String(inv.id));
-                            batch.set(invRef, inv);
-                        }
-                    });
+                    if(s.deliveryStatus !== 'return') {
+                        s.items.forEach(c => {
+                            let inv = inventory.find(i => i.id == c.id);
+                            if(inv) {
+                                inv.qty += c.qty;
+                                let invRef = db.collection('shops').doc(owner).collection('inventory').doc(String(inv.id));
+                                batch.set(invRef, inv);
+                            }
+                        });
+                    }
                     let saleRef = db.collection('shops').doc(owner).collection('sales').doc(String(id));
                     batch.delete(saleRef);
                     await batch.commit();
@@ -2722,7 +2824,7 @@
                     <div class="card-title">Create New Staff Account</div>
                     <div class="form-group"><label>Staff Name</label><input type="text" id="staff-name" class="form-control" placeholder="Name"></div>
                     <div class="form-group"><label>Username</label><input type="text" id="staff-user" class="form-control" placeholder="Username"></div>
-                    <div class="form-group"><label>Password</label><input type="password" id="staff-pass" class="form-control" placeholder="Password"></div>
+                    <div class="form-group"><label>Password (8 digits)</label><input type="password" id="staff-pass" class="form-control" placeholder="Password" minlength="8" maxlength="8"></div>
                     <div class="form-group">
                         <label>Role Type</label>
                         <input type="text" id="staff-type-display" readonly class="form-control" value="${selectedStaffRoleText}" onclick="openStaffRoleSelectModal()" style="cursor: pointer; background: #fff;">
@@ -2862,6 +2964,7 @@
             let pass = document.getElementById('staff-pass').value.trim();
             let staffType = document.getElementById('staff-type-select').value;
             if(!name || !username || !pass) { showCustomModal('Please fill in all fields.', 'Warning'); return; }
+            if(pass.length !== 8) { showCustomModal('Password must be exactly 8 digits.', 'Warning'); return; }
             let staffs = getStaffs();
             if(staffs.some(s => s.username === username)) { showCustomModal('Username already exists.', 'Warning'); return; }
 
@@ -3006,10 +3109,6 @@
             closeCustomSelectModal();
         }
 
-        function closeCustomSelectModal() {
-            document.getElementById('custom-select-modal').classList.remove('show');
-        }
-
         function updatePayAccountInfo() {
             let m = document.getElementById('pro-method').value;
             let display = document.getElementById('pay-account-display');
@@ -3031,7 +3130,7 @@
                     selectedDurationText: currentUser.selectedDurationText,
                     selectedDurationVal: currentUser.selectedDurationVal
                 });
-                localStorage.setItem('nm_current_user', JSON.stringify(currentUser));
+                sessionStorage.setItem('nm_current_user', JSON.stringify(currentUser));
                 showCustomModal('Slip submitted successfully. Please wait for admin approval.', 'Success');
                 renderUserProPage();
             };
@@ -3075,9 +3174,13 @@
                 </div>
                 <div class="card">
                     <div class="card-title">Change Password</div>
-                    <div class="form-group"><label>Old Password</label><input type="password" id="user-old-pass" class="form-control"></div>
-                    <div class="form-group"><label>New Password</label><input type="password" id="user-new-pass" class="form-control"></div>
+                    <div class="form-group"><label>Old Password</label><input type="password" id="user-old-pass" class="form-control" minlength="8" maxlength="8"></div>
+                    <div class="form-group"><label>New Password (8 digits)</label><input type="password" id="user-new-pass" class="form-control" minlength="8" maxlength="8"></div>
                     <button type="button" onclick="changeUserPassword()" class="btn btn-success-custom" style="margin-top:6px;">Change Password</button>
+                </div>
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-right-from-bracket"></i> Logout Account</div>
+                    <button type="button" onclick="logoutApp()" class="btn btn-danger" style="background: rgba(248, 113, 113, 0.2); color: #dc2626; border-color: rgba(248, 113, 113, 0.4);"><i class="fa-solid fa-right-from-bracket"></i> ${dict.logout}</button>
                 </div>
             `;
         }
@@ -3102,7 +3205,7 @@
                     
                     currentUser.profilePic = compressedDataUrl;
                     await db.collection('users').doc(currentUser.username).update({ profilePic: compressedDataUrl });
-                    localStorage.setItem('nm_current_user', JSON.stringify(currentUser));
+                    sessionStorage.setItem('nm_current_user', JSON.stringify(currentUser));
 
                     showCustomModal('Profile picture updated successfully.', 'Success');
                     renderUserDatailsPage();
@@ -3115,6 +3218,7 @@
         async function changeUserPassword() {
             let oldP = document.getElementById('user-old-pass').value;
             let newP = document.getElementById('user-new-pass').value;
+            if(newP.length !== 8) { showCustomModal('New password must be exactly 8 digits.', 'Warning'); return; }
             if(oldP !== currentUser.pass) { showCustomModal('Incorrect old password.', 'Error'); return; }
             currentUser.pass = newP;
             if(currentUser.role === 'shop') {
@@ -3128,7 +3232,7 @@
                     await db.collection('shops').doc(owner).collection('staffs').doc(String(st.id)).set(st);
                 }
             }
-            localStorage.setItem('nm_current_user', JSON.stringify(currentUser));
+            sessionStorage.setItem('nm_current_user', JSON.stringify(currentUser));
             showCustomModal('Password changed successfully.', 'Success');
         }
 
@@ -3136,10 +3240,11 @@
             const dict = langData[currentLang];
             const contentArea = document.getElementById('content-area-container');
             let isPro = currentUser && currentUser.plan === 'pro';
+            let isShop = currentUser && currentUser.role === 'shop';
             let activeThemeKey = currentUser.theme || 'original';
 
             let themePickerHtml = '';
-            if(isPro) {
+            if(isPro && isShop) {
                 let swatchesHtml = Object.keys(themes).map(key => {
                     let th = themes[key];
                     let isActive = (activeThemeKey === key) ? 'active-theme' : '';
@@ -3169,20 +3274,25 @@
                         <div class="card-title"><i class="fa-solid fa-upload"></i> ${dict.restoretitle}</div>
                         <button type="button" onclick="triggerRestore()" class="btn btn-primary"><i class="fa-solid fa-file-arrow-up"></i> ${dict.restorebtn}</button>
                     </div>
+                    <div class="card">
+                        <div class="card-title"><i class="fa-solid fa-right-from-bracket"></i> Logout Account</div>
+                        <button type="button" onclick="logoutApp()" class="btn btn-danger" style="background: rgba(248, 113, 113, 0.2); color: #dc2626; border-color: rgba(248, 113, 113, 0.4);"><i class="fa-solid fa-right-from-bracket"></i> ${dict.logout}</button>
+                    </div>
                 ` : ''}
-                <div class="card"><button type="button" onclick="logoutApp()" class="btn btn-danger"><i class="fa-solid fa-right-from-bracket"></i> ${dict.logout}</button></div>
             `;
         }
 
         async function selectAndSaveTheme(themeKey) {
             currentUser.theme = themeKey;
             applyTheme(themeKey);
-            localStorage.setItem('nm_current_user', JSON.stringify(currentUser));
+            sessionStorage.setItem('nm_current_user', JSON.stringify(currentUser));
+            
+            showCustomModal('Theme color changed successfully.', 'Success');
+            
             if(currentUser.role === 'shop') {
                 await db.collection('users').doc(currentUser.username).update({ theme: themeKey });
             }
             renderSettingsPage();
-            showCustomModal('Theme color changed successfully.', 'Success');
         }
 
         function backupData() {
@@ -3233,7 +3343,7 @@
                 if(parsed.sales) {
                     parsed.sales.forEach(sale => {
                         let ref = db.collection('shops').doc(owner).collection('sales').doc(String(sale.id));
-                        batch.set(ref, sale);
+                        batch.set(ref, item);
                     });
                 }
                 await batch.commit();
@@ -3247,7 +3357,7 @@
         function showCustomModal(msg, title = "Notification") {
             document.getElementById('modal-message').innerText = msg;
             document.getElementById('modal-title').innerHTML = `<span><i class="fa-solid fa-circle-info"></i> ${title}</span>`;
-            document.getElementById('custom-modal-footer').innerHTML = `<button type="button" class="btn btn-primary" onclick="closeCustomModal()" style="width: auto; padding: 6px 16px;" id="modal-ok-btn">OK</button>`;
+            document.getElementById('modal-ok-btn').innerText = "OK";
             document.getElementById('custom-modal').classList.add('show');
         }
         function closeCustomModal() { document.getElementById('custom-modal').classList.remove('show'); }
