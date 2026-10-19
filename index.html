@@ -860,6 +860,15 @@
                 localStorage.setItem('nm_cached_users', JSON.stringify(users));
                 updateAdminNotiBadge();
 
+                // Staff အနေဖြင့် ဝင်ထားစဉ် ဆိုင်၏ Plan သည် free (Lifetime) သို့ ပြောင်းသွားပါက (သို့မဟုတ်) ဆိုင်/အကောင့် ဖျက်ခံရပါက အလိုအလျောက် Logout ဖြစ်စေရန်[span_6](start_span)[span_6](end_span)[span_7](start_span)[span_7](end_span)
+                if (currentUser.role === 'staff') {
+                    let ownerUserObj = users.find(x => x.username === currentUser.ownerUser);
+                    if (!ownerUserObj || ownerUserObj.plan === 'free') {
+                        logoutApp();
+                        return;
+                    }
+                }
+
                 if (currentUser.role === 'shop') {
                     let updatedMe = users.find(x => x.username === currentUser.username);
                     if (!updatedMe) {
@@ -934,7 +943,6 @@
                     staffsList = [];
                     snap.forEach(doc => staffsList.push(doc.data()));
                     
-                    // Staff အနေဖြင့် မိမိအကောင့် အဖျက်ခံရပါက (သို့မဟုတ်) ဆိုင်၏ Pro Plan သက်တမ်းကုန်သွားပါက / Lifetime ပြောင်းသွားပါက Popup မပြဘဲ Logout သာ အလိုအလျောက်ဖြစ်စေရန်[span_4](start_span)[span_4](end_span)
                     if (currentUser.role === 'staff') {
                         let foundStaff = staffsList.find(s => s.username === currentUser.username);
                         let ownerUserObj = users.find(x => x.username === currentUser.ownerUser);
