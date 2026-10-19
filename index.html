@@ -889,16 +889,13 @@
                     initAppForRole(getActivePageId());
                 } else if (currentUser.role === 'staff') {
                     let ownerUserObj = users.find(x => x.username === currentUser.ownerUser);
-                    if (!ownerUserObj || ownerUserObj.plan === 'free') {
-                        logoutApp();
-                        showCustomModal('ဆိုင်၏ Pro Plan သက်တမ်းကုန်ဆုံးသွားပြီဖြစ်၍ ဝန်ထမ်းအကောင့်ကို ထွက်ခွာလိုက်ပါပြီ။', 'အကြောင်းကြားစာ');
-                        return;
+                    if (ownerUserObj) {
+                        currentUser.theme = ownerUserObj.theme;
+                        currentUser.plan = ownerUserObj.plan;
+                        sessionStorage.setItem('nm_current_user', JSON.stringify(currentUser));
+                        if(currentUser.theme) applyTheme(currentUser.theme);
+                        initAppForRole(getActivePageId());
                     }
-                    currentUser.theme = ownerUserObj.theme;
-                    currentUser.plan = ownerUserObj.plan;
-                    sessionStorage.setItem('nm_current_user', JSON.stringify(currentUser));
-                    if(currentUser.theme) applyTheme(currentUser.theme);
-                    initAppForRole(getActivePageId());
                 } else if(currentUser.role === 'admin') {
                     refreshCurrentPageView();
                 }
