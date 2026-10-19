@@ -889,9 +889,9 @@
                     initAppForRole(getActivePageId());
                 } else if (currentUser.role === 'staff') {
                     let ownerUserObj = users.find(x => x.username === currentUser.ownerUser);
-                    if (!ownerUserObj) {
+                    if (!ownerUserObj || ownerUserObj.plan === 'free') {
                         logoutApp();
-                        showCustomModal('ဆိုင်အကောင့်ဖျက်သိခံရသဖြင့် ဝန်ထမ်းအကောင့်ပါ ထွက်သွားပါပြီ။', 'အကြောင်းကြားစာ');
+                        showCustomModal('ဆိုင်၏ Pro Plan သက်တမ်းကုန်ဆုံးသွားပြီဖြစ်၍ ဝန်ထမ်းအကောင့်ကို ထွက်ခွာလိုက်ပါပြီ။', 'အကြောင်းကြားစာ');
                         return;
                     }
                     currentUser.theme = ownerUserObj.theme;
@@ -937,7 +937,6 @@
                 let unsubStaff = db.collection('shops').doc(owner).collection('staffs').onSnapshot(snap => {
                     staffsList = [];
                     snap.forEach(doc => staffsList.push(doc.data()));
-                    localStorage.setItem('nm_cached_staffs', JSON.stringify(staffsList));
                     
                     // Staff အနေဖြင့် မိမိအကောင့် အဖျက်ခံရပါက ချက်ချင်း Logout ဖြစ်စေရန်
                     if (currentUser.role === 'staff') {
@@ -1141,6 +1140,9 @@
             } else {
                 let allShopUsers = users.filter(x => x.role === 'shop');
                 for(let shop of allShopUsers) {
+                    // အကယ်၍ ဆိုင်၏ plan သည် free (Lifetime) ဖြစ်နေပါက ၎င်းဆိုင်၏ staff များကို ဝင်ခွင့်မပြုပါ
+                    if(shop.plan === 'free') continue;
+
                     const staffSnap = await db.collection('shops').doc(shop.username).collection('staffs').get();
                     let staffs = [];
                     staffSnap.forEach(doc => staffs.push(doc.data()));
@@ -1157,6 +1159,19 @@
             }
 
             if(currentUser) {
+                // အကယ်၍ Staff အနေဖြင့် ဝင်လာပြီး ဆိုင်ပိုင်ရှင်က Lifetime (free) Plan ဖြစ်သွားပါက ဝင်ခွင့်ပိတ်ရန်
+                if(currentUser.role === 'staff') {
+                    let ownerUserObj = users.find(x => x.username === currentUser.ownerUser);
+                    if(!ownerUserObj || ownerUserObj.plan === 'free') {
+                        loginBtn.disabled = false;
+                        loginBtn.innerHTML = `Login`;
+                        errBox.innerText = 'Your shop is currently on Lifetime Plan. Staff login is available for Pro Plan only.';
+                        errBox.style.display = 'block';
+                        currentUser = null;
+                        return;
+                    }
+                }
+
                 loginBtn.innerHTML = `<i class="fa-solid fa-check"></i> Success!`;
                 loginBtn.style.background = '#10b981';
 
@@ -1178,7 +1193,7 @@
             } else {
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = `Login`;
-                errBox.innerText = 'Invalid Username or Password.';
+                errBox.innerText = 'Invalid Username or Password, or staff login disabled for Lifetime Plan.';
                 errBox.style.display = 'block';
             }
         }
