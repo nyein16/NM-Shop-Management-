@@ -402,7 +402,7 @@
 </head>
 <body>
 
-    <!-- AUTHENTICATION / LOGIN OVERLAY -->
+    <!-- AUTHENTICATION / LOGIN OVERLAY (English Only) -->
     <div id="auth-overlay">
         <div class="auth-card">
             <img id="auth-logo-img" src="ei_1792087026911-removebg-preview.png" alt="Logo">
@@ -469,7 +469,7 @@
                 <span id="cal-month-year">Oct 2026</span>
                 <button type="button" onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
-            <div style="font-size: 10px; color: #a855f7; text-align: center; font-weight: bold;" id="cal-instructions">Select Date</div>
+            <div style="font-size: 10px; color: var(--accent-glow); text-align: center; font-weight: bold;" id="cal-instructions">Select Date</div>
             <div class="calendar-grid" id="cal-grid-body"></div>
             <div class="calendar-footer" style="display:flex; justify-content:flex-end; gap:6px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
                 <button type="button" onclick="confirmCalendarSelection()" class="btn btn-success-custom" style="width: auto; padding: 4px 18px; font-size: 11px;" id="cal-confirm-btn">Confirm</button>
@@ -477,18 +477,29 @@
         </div>
     </div>
 
-    <!-- Staff Sales Range Calendar Modal -->
-    <div id="range-calendar-modal-wrapper" class="calendar-overlay-wrapper" onclick="closeRangeCalendarModal(event)">
-        <div class="calendar-dropdown-box" onclick="event.stopPropagation()">
-            <div class="calendar-header">
-                <button type="button" onclick="changeRangeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-                <span id="range-cal-month-year">Oct 2026</span>
-                <button type="button" onclick="changeRangeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+    <!-- Custom Theme-styled Month Picker Modal (Without border lines, Years up to 2100) -->
+    <div id="custom-month-modal" class="custom-modal-overlay" onclick="closeCustomMonthModal(event)">
+        <div class="custom-modal" style="max-width: 320px;" onclick="event.stopPropagation()">
+            <div class="custom-modal-header" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));">
+                <span><i class="fa-solid fa-calendar-days"></i> Set month</span>
+                <button type="button" onclick="closeCustomMonthModal()" style="background: none; border: none; color: white; font-size: 14px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div style="font-size: 10px; color: #a855f7; text-align: center; font-weight: bold;" id="range-cal-instructions">Select Start & End Date</div>
-            <div class="calendar-grid" id="range-cal-grid-body"></div>
-            <div class="calendar-footer" style="display:flex; justify-content:flex-end; gap:6px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
-                <button type="button" onclick="confirmRangeCalendarSelection()" class="btn btn-success-custom" style="width: auto; padding: 4px 18px; font-size: 11px;" id="range-cal-confirm-btn">Confirm</button>
+            <div class="custom-modal-body" style="text-align: center; padding: 16px; position: relative;">
+                <div style="display: flex; justify-content: center; align-items: center; gap: 15px;">
+                    <!-- Months Column -->
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; max-height: 180px; overflow-y: auto;" id="picker-months-list">
+                    </div>
+                    <!-- Years Column -->
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100px; max-height: 180px; overflow-y: auto;" id="picker-years-list">
+                    </div>
+                </div>
+            </div>
+            <div class="custom-modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="btn" onclick="clearCustomMonthSelection()" style="width: auto; background: transparent; color: var(--primary-color); border: none; font-weight: bold;">Clear</button>
+                <div style="display: flex; gap: 6px;">
+                    <button type="button" class="btn" onclick="closeCustomMonthModal()" style="width: auto; background: rgba(226, 232, 240, 0.8); color: #475569; padding: 6px 10px;">Cancel</button>
+                    <button type="button" class="btn btn-success-custom" onclick="confirmCustomMonthSelection()" style="width: auto; padding: 6px 14px; background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));">Set</button>
+                </div>
             </div>
         </div>
     </div>
@@ -533,7 +544,7 @@
                 <button type="button" onclick="closeSlipModal()" style="background: none; border: none; color: white; font-size: 14px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="custom-modal-body" style="text-align: center; padding: 10px;">
-                <img id="slip-view-img" src="" style="max-width: 100%; max-height: 60vh; border-radius: 10px; object-fit: contain;">
+                <img id="slip-view-img" style="max-width: 100%; max-height: 60vh; border-radius: 10px; object-fit: contain;">
             </div>
         </div>
     </div>
@@ -546,7 +557,29 @@
                 <button type="button" onclick="closeImageViewModal()" style="background: none; border: none; color: white; font-size: 14px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="custom-modal-body" style="text-align: center; padding: 10px;">
-                <img id="image-view-target" src="" style="max-width: 100%; max-height: 55vh; border-radius: 10px; object-fit: contain;">
+                <img id="image-view-target" style="max-width: 100%; max-height: 55vh; border-radius: 10px; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Item Modal -->
+    <div id="edit-item-modal" class="custom-modal-overlay">
+        <div class="custom-modal" style="max-width: 340px;">
+            <div class="custom-modal-header" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));">
+                <span><i class="fa-solid fa-pen-to-square"></i> Edit Item</span>
+                <button type="button" onclick="closeEditItemModal()" style="background: none; border: none; color: white; font-size: 14px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="custom-modal-body">
+                <input type="hidden" id="edit-item-id">
+                <div class="form-group"><label>Item Name</label><input type="text" id="edit-item-name" class="form-control"></div>
+                <div class="form-group"><label>Buy Price (MMK)</label><input type="number" id="edit-item-buy" class="form-control" min="0"></div>
+                <div class="form-group"><label>Sell Price (MMK)</label><input type="number" id="edit-item-sell" class="form-control" min="0"></div>
+                <div class="form-group"><label>Quantity (Stock)</label><input type="number" id="edit-item-qty" class="form-control" min="0"></div>
+                <div class="form-group"><label>Item Image (Optional)</label><input type="file" id="edit-item-image-file" accept="image/*" class="form-control" style="padding: 6px;"></div>
+            </div>
+            <div class="custom-modal-footer">
+                <button type="button" class="btn" onclick="closeEditItemModal()" style="width: auto; background: rgba(226, 232, 240, 0.8); color: #475569; padding: 6px 10px;">Cancel</button>
+                <button type="button" class="btn btn-success-custom" onclick="saveEditedItem()" style="width: auto; padding: 6px 14px;">Save Changes</button>
             </div>
         </div>
     </div>
@@ -602,11 +635,8 @@
                     <img id="invoice-result-img" style="width: 100%; border-radius: 8px; border: 1px solid var(--primary-color);" src="" alt="Invoice">
                 </div>
             </div>
-            <div class="custom-modal-footer" id="modal-footer-btn" style="display: flex; gap: 6px;">
-                <button type="button" onclick="printInvoiceWithBluetooth()" class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, #10b981, #047857);">
-                    <i class="fa-solid fa-print"></i> <span>Printer ဖြင့်ထုတ်မည်</span>
-                </button>
-                <button type="button" onclick="generateInvoiceImage()" class="btn btn-success-custom" style="flex: 1; background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));">
+            <div class="custom-modal-footer" id="modal-footer-btn">
+                <button type="button" onclick="generateInvoiceImage()" class="btn btn-success-custom" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));">
                     <i class="fa-solid fa-image"></i> <span class="t-genimgbtn">Save Invoice Image</span>
                 </button>
             </div>
@@ -703,48 +733,46 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        const langData = {
-            en: {
-                admDash: "Admin Dashboard", admCreate: "Account Create", admAccounts: "Manage Accounts", admNotis: "Pro Plan Notifications", admSett: "Admin Settings",
-                proIncome: "Pro Plan Income", lifeIncome: "Lifetime Plan Income", totalAccs: "Total Created Accounts",
-                freeAccsCount: "Lifetime Plan Accounts", proAccsCount: "Pro Plan Accounts",
-                shopName: "Shop Name", phoneNo: "Phone Number", user: "Username", pass: "Password (8 digits)", createAccBtn: "Create Account",
-                kpaySet: "KPay Details", waveSet: "Wave Details", saveSetBtn: "Save Settings",
-                changeAdminPass: "Change Admin Password", oldPass: "Old Password", newPass: "New Password (8 digits)", changePassBtn: "Change Password",
-                loginLabel: "Sign in to your account",
-                dash: "Dashboard", inv: "Inventory", sell: "Sell", hist: "Sales History", custStatus: "Customer Status", sett: "Settings", proPlan: "Pro Plan", accDetails: "Account Details", staffs: "Staffs", staffSalesSum: "Staff Sales Summary",
-                welcome: "Summary", todaysales: "Today's Sales", todaycount: "Today's Transactions", todayprofit: "Today's Profit", itemtypes: "Item Types", totalstock: "Total Stock Items",
-                invtitle: "Inventory & Stock Balance", additem: "Add New Item", itemname: "Item Name", buyprice: "Buy Price", sellprice: "Sell Price", qty: "Quantity (Stock)", imgpicker: "Select Item Image", savebtn: "Save Item",
-                thImg: "Image", thNo: "No", thName: "Item Name", thBuy: "Buy Price", thSell: "Sell Price", thQty: "Quantity", thAction: "Action",
-                thDate: "Date", thCust: "Customer Name", thContact: "Phone / Address", thItems: "Items", thAmount: "Amount", noInv: "No inventory items found",
-                selltitle: "Sell", custname: "Customer Name", phone: "Phone Number", address: "Address", selectitem: "Select Item", itemqty: "Quantity", nocart: "Cart is empty",
-                totamount: "Total Amount", promo: "Promotion / Discount (%)", discountoff: "Discount Off:", checkoutbtn: "Confirm Sale & Generate Invoice",
-                histtitle: "Sales History", totalprofitbadge: "Total Profit:", searchfilter: "Search by Invoice No or Customer Name", showall: "Search", noHist: "No sales history found",
-                setttitle: "Settings & Data Management", backuptitle: "Backup Data", backupbtn: "Backup (Copy Data)", restoretitle: "Restore Data", restorebtn: "Restore (Restore Data)",
-                invpreview: "Sales Invoice", invdate: "Date", invcust: "Customer", invcontact: "Phone/Address", subtotallabel: "Subtotal", invtotal: "Total", invthx: "~ Thank you for your purchase ~",
-                genimgbtn: "Generate Invoice Image", pickerheader: "Select Item", currency: "MMK", delete: "Delete", logout: "Logout",
-                proPlanTitle: "Pro Plan Features", 
-                proFeat1: "Unlimited Items", 
-                proFeat2: "Product Images", 
-                proFeat3: "Multi-user Staff Accounts", 
-                proFeat4: "Delivery Status & Customer Status Management",
-                proFeat5: "Detailed Sales & Profit Analytics",
-                proFeat6: "Customizable Theme Colors for your Business",
-                durationPayment: "Duration & Payment",
-                durationPriceLabel: "Duration & Price",
-                payMethodLabel: "Payment Method",
-                accountLabel: "Account:",
-                copyBtnText: "Copy",
-                slipImgLabel: "Payment Slip Image",
-                submitSlipBtn: "Submit Slip",
-                slipHistoryTitle: "Slip History",
-                pendingStatus: "Pending",
-                themeColorTitle: "Theme Color",
-                themeColorDesc: "Choose a theme color that suits your business."
-            }
+        // English Dictionary
+        const dict = {
+            admDash: "Admin Dashboard", admCreate: "Account Create", admAccounts: "Manage Accounts", admNotis: "Pro Plan Notifications", admSett: "Admin Settings",
+            proIncome: "Pro Plan Income", lifeIncome: "Lifetime Plan Income", totalAccs: "Total Created Accounts",
+            freeAccsCount: "Lifetime Plan Accounts", proAccsCount: "Pro Plan Accounts",
+            shopName: "Shop Name", phoneNo: "Phone Number", user: "Username", pass: "Password (8 digits)", createAccBtn: "Create Account",
+            kpaySet: "KPay Details", waveSet: "Wave Details", saveSetBtn: "Save Settings",
+            changeAdminPass: "Change Admin Password", oldPass: "Old Password", newPass: "New Password (8 digits)", changePassBtn: "Change Password",
+            loginLabel: "Sign in to your account",
+            dash: "Dashboard", inv: "Inventory", sell: "Sell", hist: "Sales History", custStatus: "Customer Status", monthlyCust: "Monthly Customers", sett: "Settings", proPlan: "Pro Plan", accDetails: "Account Details", staffs: "Staffs", staffSalesSum: "Staff Sales Summary",
+            welcome: "Summary", todaysales: "Today's Sales", todaycount: "Today's Transactions", todayprofit: "Today's Profit", itemtypes: "Item Types", totalstock: "Total Stock Items",
+            invtitle: "Inventory & Stock Balance", additem: "Add New Item", itemname: "Item Name", buyprice: "Buy Price", sellprice: "Sell Price", qty: "Quantity (Stock)", imgpicker: "Select Item Image", savebtn: "Save Item",
+            thImg: "Image", thNo: "No", thName: "Item Name", thBuy: "Buy Price", thSell: "Sell Price", thQty: "Quantity", thAction: "Action",
+            thDate: "Date", thCust: "Customer Name", thContact: "Phone / Address", thItems: "Items", thAmount: "Amount", noInv: "No inventory items found",
+            selltitle: "Sell", custname: "Customer Name", phone: "Phone Number", address: "Address", selectitem: "Select Item", itemqty: "Quantity", nocart: "Cart is empty",
+            totamount: "Total Amount", promo: "Promotion / Discount (%)", discountoff: "Discount Off:", checkoutbtn: "Confirm Sale",
+            histtitle: "Sales History", totalprofitbadge: "Total Profit:", searchfilter: "Search by Invoice No or Customer Name", showall: "Search", noHist: "No sales history found",
+            setttitle: "Settings & Data Management", backuptitle: "Backup Data", backupbtn: "Backup (Copy Data)", restoretitle: "Restore Data", restorebtn: "Restore (Restore Data)",
+            invpreview: "Sales Invoice", invdate: "Date", invcust: "Customer", invcontact: "Phone/Address", subtotallabel: "Subtotal", invtotal: "Total", invthx: "~ Thank you for your purchase ~",
+            genimgbtn: "Generate Invoice Image", pickerheader: "Select Item", currency: "MMK", delete: "Delete", logout: "Logout",
+            proPlanTitle: "Pro Plan Features", 
+            proFeat1: "Unlimited Items", 
+            proFeat2: "Product Images", 
+            proFeat3: "Multi-user Staff Accounts", 
+            proFeat4: "Delivery Status & Customer Status Management",
+            proFeat5: "Detailed Sales & Profit Analytics",
+            proFeat6: "Customizable Theme Colors for your Business",
+            durationPayment: "Duration & Payment",
+            durationPriceLabel: "Duration & Price",
+            payMethodLabel: "Payment Method",
+            accountLabel: "Account:",
+            copyBtnText: "Copy",
+            slipImgLabel: "Payment Slip Image",
+            submitSlipBtn: "Submit Slip",
+            slipHistoryTitle: "Slip History",
+            pendingStatus: "Pending",
+            themeColorTitle: "Theme Color",
+            themeColorDesc: "Choose a theme color that suits your business."
         };
 
-        let currentLang = 'en';
         let users = JSON.parse(localStorage.getItem('nm_cached_users')) || [];
         let currentUser = JSON.parse(sessionStorage.getItem('nm_current_user')) || null;
         
@@ -759,7 +787,6 @@
         let systemSettings = JSON.parse(localStorage.getItem('nm_cached_settings')) || { 
             kpay: '09779964344 (Nyein Khant Kyaw)', 
             wave: '09779964344 (Nyein Khant Kyaw)', 
-            lang: 'en',
             pricingPlans: defaultPricingPlans
         };
 
@@ -838,8 +865,8 @@
                         let uData = change.doc.data();
                         if (uData.slip && uData.slip !== "") {
                             if ('Notification' in window && Notification.permission === 'granted') {
-                                new Notification("Pro Plan Slip အသစ်ရောက်ရှိလာသည်", {
-                                    body: `${uData.name || uData.username} ထံမှ Payment Slip အသစ်ရောက်ရှိနေပါသည်။`,
+                                new Notification("New Pro Plan Slip Received", {
+                                    body: `New Payment Slip received from ${uData.name || uData.username}.`,
                                     icon: 'ei_1792087020045-removebg-preview.png'
                                 });
                             }
@@ -875,7 +902,7 @@
                     let updatedMe = users.find(x => x.username === currentUser.username);
                     if (!updatedMe) {
                         logoutApp();
-                        showCustomModal('သင့်ဆိုင်အကောင့်ကို အင်ဒမင်မှ ဖျက်သိလိုက်ပါပြီ။', 'အကြောင်းကြားစာ');
+                        showCustomModal('Your shop account has been deleted by Admin.', 'Notification');
                         return;
                     }
                     currentUser.plan = updatedMe.plan;
@@ -1014,6 +1041,7 @@
                 else if(id === 'sales') renderSalesPage();
                 else if(id === 'history') renderHistoryPage();
                 else if(id === 'customer-status') renderCustomerStatusPage();
+                else if(id === 'monthly-customers') renderMonthlyCustomersPage();
                 else if(id === 'staffs') renderStaffsPage();
                 else if(id === 'staff-sales') renderStaffSalesSummaryPage();
                 else if(id === 'user-pro') renderUserProPage();
@@ -1062,13 +1090,8 @@
         let calMonth = new Date().getMonth();
         let activeCalendarMode = 'history';
 
-        let rangeStartDate = '';
-        let rangeEndDate = '';
-        let tempRangeStart = '';
-        let tempRangeEnd = '';
-        let selectingRangeStart = true;
-        let rangeCalYear = new Date().getFullYear();
-        let rangeCalMonth = new Date().getMonth();
+        // Staff Sales Summary Month-Year filter state
+        let selectedStaffSalesMonthFilter = new Date().toISOString().slice(0, 7);
 
         function getFormattedDate(d) {
             if (!d) return '';
@@ -1220,7 +1243,6 @@
 
         function initAppForRole(activePageId = null) {
             const menuList = document.getElementById('sidebar-menu-list');
-            const dict = langData[currentLang];
             
             document.getElementById('login-label-text').innerText = dict.loginLabel;
             
@@ -1274,6 +1296,7 @@
                     <li id="menu-sales" onclick="switchPage('sales')"><i class="fa-solid fa-cash-register"></i> <span>${dict.sell}</span></li>
                     <li id="menu-history" onclick="switchPage('history')"><i class="fa-solid fa-file-lines"></i> <span>${dict.hist}</span></li>
                     ${isPro ? `<li id="menu-customer-status" onclick="switchPage('customer-status')"><i class="fa-solid fa-truck-fast"></i> <span>${dict.custStatus}</span></li>` : ''}
+                    ${isPro ? `<li id="menu-monthly-customers" onclick="switchPage('monthly-customers')"><i class="fa-solid fa-calendar-days"></i> <span>${dict.monthlyCust}</span></li>` : ''}
                     ${isPro ? `<li id="menu-staffs" onclick="switchPage('staffs')"><i class="fa-solid fa-users"></i> <span>${dict.staffs}</span></li>` : ''}
                     ${isPro ? `<li id="menu-staff-sales" onclick="switchPage('staff-sales')"><i class="fa-solid fa-chart-column"></i> <span>${dict.staffSalesSum}</span></li>` : ''}
                     ${isFree ? `<li id="menu-user-pro" onclick="switchPage('user-pro')"><i class="fa-solid fa-crown"></i> <span>${dict.proPlan}</span></li>` : ''}
@@ -1307,6 +1330,7 @@
                 else if(pageId === 'sales') renderSalesPage();
                 else if(pageId === 'history') renderHistoryPage();
                 else if(pageId === 'customer-status') renderCustomerStatusPage();
+                else if(pageId === 'monthly-customers') renderMonthlyCustomersPage();
                 else if(pageId === 'staffs') renderStaffsPage();
                 else if(pageId === 'staff-sales') renderStaffSalesSummaryPage();
                 else if(pageId === 'user-pro') renderUserProPage();
@@ -1324,7 +1348,6 @@
         }
 
         function renderAdminDashboard() {
-            const dict = langData[currentLang];
             let proIncome = 0, freeIncome = 0;
             const shopUsers = users.filter(u => u.role === 'shop');
             
@@ -1336,7 +1359,7 @@
                     proIncome += Number(u.proValue || 30000);
                     proCount++;
                 } else if(u.plan === 'free') {
-                    freeIncome += 10000;
+                    freeIncome += 5000;
                     freeCount++;
                 }
             });
@@ -1370,7 +1393,6 @@
         }
 
         function renderAdminCreatePage() {
-            const dict = langData[currentLang];
             const contentArea = document.getElementById('content-area-container');
             contentArea.innerHTML = `
                 <div class="page-title-box"><h2><i class="fa-solid fa-user-plus" style="color: var(--primary-color);"></i> ${dict.admCreate}</h2></div>
@@ -1401,7 +1423,6 @@
         }
 
         function renderAdminAccounts() {
-            const dict = langData[currentLang];
             const shopUsers = users.filter(u => u.role === 'shop');
             const contentArea = document.getElementById('content-area-container');
             contentArea.innerHTML = `
@@ -1544,7 +1565,7 @@
         }
 
         function adminDeleteUser(username) {
-            showConfirmModal('ဤဆိုင်အကောင့်နှင့် ၎င်း၏ ဝန်ထမ်းအကောင့်များကိုပါ အမြဲတမ်း ဖျက်ရန် သေချာပါသလား?', async () => {
+            showConfirmModal('Are you sure you want to delete this shop account and its staff accounts?', async () => {
                 const staffSnap = await db.collection('shops').doc(username).collection('staffs').get();
                 let batch = db.batch();
                 staffSnap.forEach(doc => {
@@ -1558,12 +1579,11 @@
                 await fetchSystemDataOnce();
                 closeConfirmModal();
                 renderAdminAccounts();
-                showCustomModal('ဆိုင်အကောင့်နှင့် ဝန်ထမ်းအကောင့်များ အောင်မြင်စွာ ဖျက်ပြီးပါပြီ။', 'အောင်မြင်ပါသည်');
+                showCustomModal('Shop and staff accounts successfully deleted.', 'Success');
             });
         }
 
         function renderAdminNotis() {
-            const dict = langData[currentLang];
             const pendingSlips = users.filter(u => u.slip && u.slip !== "");
             const allShopsWithHistory = users.filter(u => u.role === 'shop' && u.slipHistory && u.slipHistory.length > 0);
             
@@ -1694,7 +1714,6 @@
         }
 
         function renderAdminSettings() {
-            const dict = langData[currentLang];
             const contentArea = document.getElementById('content-area-container');
             let pricingList = systemSettings.pricingPlans || defaultPricingPlans;
             pricingList.sort((a, b) => a.months - b.months);
@@ -1711,14 +1730,14 @@
                 <div class="card">
                     <div class="card-title"><i class="fa-solid fa-tags"></i> Pro Plan Pricing Settings</div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; align-items: end; margin-bottom: 8px;">
-                        <div class="form-group" style="margin-bottom:0;"><label>Months (လ)</label><input type="number" id="new-plan-months" class="form-control" min="1" placeholder="ဥပမာ - 1, 2, 3"></div>
-                        <div class="form-group" style="margin-bottom:0;"><label>Price (ဈေးနှုန်း - MMK)</label><input type="number" id="new-plan-price" class="form-control" min="0" placeholder="ဥပမာ - 30000"></div>
+                        <div class="form-group" style="margin-bottom:0;"><label>Months</label><input type="number" id="new-plan-months" class="form-control" min="1" placeholder="e.g. 1, 3, 6"></div>
+                        <div class="form-group" style="margin-bottom:0;"><label>Price (MMK)</label><input type="number" id="new-plan-price" class="form-control" min="0" placeholder="e.g. 30000"></div>
                         <button type="button" onclick="addNewPricingPlan()" class="btn btn-success-custom" style="width: auto; padding: 7px 14px;"><i class="fa-solid fa-plus"></i> Add</button>
                     </div>
                     
                     <div class="table-box" style="margin-top: 10px;">
                         <table>
-                            <thead><tr><th>No</th><th>Months (လ)</th><th>Price (MMK)</th><th>Action</th></tr></thead>
+                            <thead><tr><th>No</th><th>Months</th><th>Price (MMK)</th><th>Action</th></tr></thead>
                             <tbody id="admin-pricing-table-body">
                                 ${pricingList.length === 0 ? `<tr><td colspan="4" style="text-align:center; padding:10px;">No pricing added yet.</td></tr>` :
                                     pricingList.map((p, idx) => `
@@ -1830,7 +1849,6 @@
                 }
             });
 
-            const dict = langData[currentLang];
             const curr = dict.currency;
             let totalStockQty = 0;
             inventory.forEach(i => totalStockQty += Number(i.qty) || 0);
@@ -1908,7 +1926,6 @@
         }
 
         function renderInventoryPage() {
-            const dict = langData[currentLang];
             const inventory = getInventory();
             const curr = dict.currency;
             const contentArea = document.getElementById('content-area-container');
@@ -1936,7 +1953,14 @@
                                 inventory.map((item, index) => {
                                     let isLowStock = Number(item.qty) <= 5;
                                     let stockBadge = isLowStock && isPro ? `<span class="badge badge-danger" style="margin-left:6px;"><i class="fa-solid fa-triangle-exclamation"></i> Low Stock (${item.qty})</span>` : '';
-                                    let qtyUpdateBtn = isPro ? `<button onclick="openUpdateQtyModal(${item.id}, '${item.name}', ${item.qty})" class="btn btn-primary" style="padding:2px 6px; font-size:10px; width:auto; margin-left:4px;" title="Update Stock"><i class="fa-solid fa-plus"></i></button>` : '';
+                                    
+                                    let actionButton = '';
+                                    if (isPro) {
+                                        actionButton = `<button onclick="openEditItemModal(${item.id})" class="btn btn-primary" style="padding:2px 8px; font-size:10px; width:auto; margin-left:4px;" title="Edit Item"><i class="fa-solid fa-pen-to-square"></i> Edit</button>`;
+                                    } else {
+                                        actionButton = `<button onclick="openUpdateQtyModal(${item.id}, '${item.name}', ${item.qty})" class="btn btn-primary" style="padding:2px 6px; font-size:10px; width:auto; margin-left:4px;" title="Update Stock"><i class="fa-solid fa-plus"></i></button>`;
+                                    }
+
                                     return `
                                         <tr>
                                             ${isPro ? `<td>${item.image ? `<img src="${item.image}" class="item-thumb" onclick="viewLargeImage('${item.image}', '${item.name}')">` : `<div class="item-thumb"><i class="fa-solid fa-shirt"></i></div>`}</td>` : ''}
@@ -1944,7 +1968,7 @@
                                             <td><b>${item.name}</b> ${stockBadge}</td>
                                             <td>${item.buyPrice.toLocaleString()} ${curr}</td>
                                             <td>${item.sellPrice.toLocaleString()} ${curr}</td>
-                                            <td>${item.qty} ${qtyUpdateBtn}</td>
+                                            <td>${item.qty} ${actionButton}</td>
                                             <td><button onclick="confirmDeleteInventory(${item.id})" class="btn-danger"><i class="fa-solid fa-trash"></i> ${dict.delete}</button></td>
                                         </tr>
                                     `;
@@ -1953,6 +1977,76 @@
                     </table>
                 </div>
             `;
+        }
+
+        function openEditItemModal(itemId) {
+            let inventory = getInventory();
+            let item = inventory.find(i => i.id == itemId);
+            if(!item) return;
+
+            document.getElementById('edit-item-id').value = item.id;
+            document.getElementById('edit-item-name').value = item.name;
+            document.getElementById('edit-item-buy').value = item.buyPrice || 0;
+            document.getElementById('edit-item-sell').value = item.sellPrice || 0;
+            document.getElementById('edit-item-qty').value = item.qty || 0;
+            document.getElementById('edit-item-image-file').value = '';
+            document.getElementById('edit-item-modal').classList.add('show');
+        }
+
+        function closeEditItemModal() {
+            document.getElementById('edit-item-modal').classList.remove('show');
+        }
+
+        async function saveEditedItem() {
+            let itemId = Number(document.getElementById('edit-item-id').value);
+            let name = document.getElementById('edit-item-name').value.trim();
+            let buyPrice = Number(document.getElementById('edit-item-buy').value || 0);
+            let sellPrice = Number(document.getElementById('edit-item-sell').value || 0);
+            let qty = Number(document.getElementById('edit-item-qty').value || 0);
+            let imageFile = document.getElementById('edit-item-image-file').files[0];
+
+            if(!name) { showCustomModal('Item name is required.', 'Warning'); return; }
+
+            let owner = getOwnerName();
+            let invRef = db.collection('shops').doc(owner).collection('inventory').doc(String(itemId));
+            let docSnap = await invRef.get();
+            if(!docSnap.exists) { showCustomModal('Item not found.', 'Error'); return; }
+
+            let itemData = docSnap.data();
+            itemData.name = name;
+            itemData.buyPrice = buyPrice;
+            itemData.sellPrice = sellPrice;
+            itemData.qty = qty;
+
+            let updateAndSave = async (imgData) => {
+                if(imgData !== undefined) {
+                    itemData.image = imgData;
+                }
+                await invRef.set(itemData);
+                closeEditItemModal();
+                showCustomModal('Item updated successfully.', 'Success');
+            };
+
+            if(imageFile) {
+                const reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 300, MAX_HEIGHT = 300;
+                        let width = img.width, height = img.height;
+                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
+                        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                        canvas.width = width; canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        updateAndSave(canvas.toDataURL('image/jpeg', 0.6));
+                    };
+                    img.src = uploadEvent.target.result;
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                updateAndSave();
+            }
         }
 
         function openUpdateQtyModal(itemId, itemName, currentQty) {
@@ -1985,7 +2079,6 @@
 
         async function addInventoryItem(e) {
             e.preventDefault();
-            const dict = langData[currentLang];
             const isPro = currentUser.plan === 'pro';
             const isFree = currentUser.plan === 'free';
 
@@ -2042,7 +2135,6 @@
         function closeImageViewModal() { document.getElementById('image-view-modal').classList.remove('show'); }
 
         function confirmDeleteInventory(id) {
-            const dict = langData[currentLang];
             showConfirmModal('Delete this item?', async () => {
                 let owner = getOwnerName();
                 await db.collection('shops').doc(owner).collection('inventory').doc(String(id)).delete();
@@ -2051,7 +2143,6 @@
         }
 
         function renderSalesPage() {
-            const dict = langData[currentLang];
             const curr = dict.currency;
             const contentArea = document.getElementById('content-area-container');
             contentArea.innerHTML = `
@@ -2102,7 +2193,6 @@
         }
 
         function openItemPicker() {
-            const dict = langData[currentLang];
             const inventory = getInventory();
             const container = document.getElementById('picker-item-container');
             container.innerHTML = '';
@@ -2135,7 +2225,6 @@
         function closeItemPicker() { document.getElementById('item-picker-modal').classList.remove('show'); }
 
         function addToCart() {
-            const dict = langData[currentLang];
             const itemId = document.getElementById('sale-item-select').value;
             const qtyInput = document.getElementById('sale-item-qty').value;
             const qty = qtyInput ? Number(qtyInput) : 1;
@@ -2158,7 +2247,6 @@
         }
 
         function renderCart() {
-            const dict = langData[currentLang];
             const tbody = document.getElementById('cart-table-body');
             const curr = dict.currency;
             if(!tbody) return;
@@ -2198,7 +2286,6 @@
 
         async function recordSale(e) {
             e.preventDefault();
-            const dict = langData[currentLang];
             if(cart.length === 0) { showCustomModal(dict.nocart, 'Warning'); return; }
             const customer = document.getElementById('sale-customer').value.trim();
             const phone = document.getElementById('sale-phone').value.trim();
@@ -2260,7 +2347,6 @@
         }
 
         function renderHistoryPage() {
-            const dict = langData[currentLang];
             const curr = dict.currency;
             const contentArea = document.getElementById('content-area-container');
             const isStaff = currentUser.role === 'staff';
@@ -2298,7 +2384,6 @@
         }
 
         function renderHistory() {
-            const dict = langData[currentLang];
             const sales = getSales();
             const tbody = document.getElementById('history-table-body');
             if(!tbody) return;
@@ -2349,6 +2434,214 @@
                 `;
             }).join('');
         }
+
+        // --- Monthly Customers Page & PDF/Image Export Logic ---
+        let selectedMonthlyFilter = new Date().toISOString().slice(0, 7); // e.g. "2026-10"
+
+        function getMonthName(monthNumberStr) {
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            let idx = parseInt(monthNumberStr, 10) - 1;
+            return months[idx] || monthNumberStr;
+        }
+
+        function formatDisplayMonthYear(yyyyMm) {
+            if(!yyyyMm || !yyyyMm.includes('-')) return yyyyMm;
+            let parts = yyyyMm.split('-');
+            let year = parts[0];
+            let monthName = getMonthName(parts[1]);
+            return `${monthName} ${year}`;
+        }
+
+        function renderMonthlyCustomersPage() {
+            const curr = dict.currency;
+            const contentArea = document.getElementById('content-area-container');
+
+            let displayMonthVal = formatDisplayMonthYear(selectedMonthlyFilter);
+
+            contentArea.innerHTML = `
+                <div class="page-title-box" style="flex-direction: row; justify-content: space-between; align-items: center;">
+                    <h2><i class="fa-solid fa-calendar-days" style="color: var(--accent-glow);"></i> ${dict.monthlyCust}</h2>
+                    <button type="button" onclick="exportMonthlyCustomersPDF()" class="btn btn-success-custom" style="width: auto; padding: 6px 14px;"><i class="fa-solid fa-file-pdf"></i> Export PDF / Image</button>
+                </div>
+                <div class="card">
+                    <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 5px;"><i class="fa-solid fa-calendar"></i> Select Month</div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <input type="text" id="monthly-customer-picker-display" class="form-control" readonly value="${displayMonthVal}" onclick="openCustomMonthModal('monthly')" style="cursor: pointer; background: #fff;">
+                    </div>
+                </div>
+
+                <div id="monthly-report-card-container">
+                    <div class="table-box" style="margin-top:0;">
+                        <table id="monthly-customer-table">
+                            <thead>
+                                <tr>
+                                    <th>${dict.thNo}</th>
+                                    <th>Invoice No</th>
+                                    <th>${dict.thDate}</th>
+                                    <th>${dict.thCust}</th>
+                                    <th>${dict.thContact}</th>
+                                    <th>${dict.thItems}</th>
+                                    <th>${dict.thAmount}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="monthly-customer-tbody">
+                                <!-- Data rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="monthly-total-summary" style="margin-top: 10px; background: #fff; padding: 10px 14px; border-radius: var(--ios-card-radius); display: flex; justify-content: space-between; align-items: center; font-weight: bold; border: 1px solid #e2e8f0;">
+                        <span>Total Monthly Sales Amount:</span>
+                        <span id="monthly-total-amount-sum" style="color: var(--accent-glow); font-size: 14px;">0 ${curr}</span>
+                    </div>
+                </div>
+            `;
+            renderMonthlyCustomerTableData();
+        }
+
+        let tempSelectedMonth = '10';
+        let tempSelectedYear = '2026';
+        let activeMonthPickerTarget = 'monthly'; // 'monthly' or 'staff_sales'
+
+        function openCustomMonthModal(target = 'monthly') {
+            activeMonthPickerTarget = target;
+            let currentVal = (target === 'staff_sales') ? selectedStaffSalesMonthFilter : selectedMonthlyFilter;
+            
+            if(currentVal && currentVal.includes('-')) {
+                let parts = currentVal.split('-');
+                tempSelectedYear = parts[0];
+                tempSelectedMonth = parts[1];
+            } else {
+                let now = new Date();
+                tempSelectedYear = String(now.getFullYear());
+                tempSelectedMonth = String(now.getMonth() + 1).padStart(2, '0');
+            }
+            renderCustomMonthPickerLists();
+            document.getElementById('custom-month-modal').classList.add('show');
+        }
+
+        function closeCustomMonthModal(e) {
+            if(!e || e.target.id === 'custom-month-modal') {
+                document.getElementById('custom-month-modal').classList.remove('show');
+            }
+        }
+
+        function renderCustomMonthPickerLists() {
+            const monthsArr = [
+                { val: '01', name: 'Jan' }, { val: '02', name: 'Feb' }, { val: '03', name: 'Mar' },
+                { val: '04', name: 'Apr' }, { val: '05', name: 'May' }, { val: '06', name: 'Jun' },
+                { val: '07', name: 'Jul' }, { val: '08', name: 'Aug' }, { val: '09', name: 'Sep' },
+                { val: '10', name: 'Oct' }, { val: '11', name: 'Nov' }, { val: '12', name: 'Dec' }
+            ];
+
+            // Years up to 2100 (starting from 2020)
+            let yearsArr = [];
+            for(let y = 2020; y <= 2100; y++) {
+                yearsArr.push(String(y));
+            }
+
+            let monthsContainer = document.getElementById('picker-months-list');
+            let yearsContainer = document.getElementById('picker-years-list');
+
+            if(monthsContainer) {
+                monthsContainer.innerHTML = monthsArr.map(m => `
+                    <div onclick="tempSelectedMonth='${m.val}'; renderCustomMonthPickerLists();" style="padding: 6px 12px; border-radius: 8px; cursor: pointer; text-align: center; font-weight: bold; width: 100%; ${tempSelectedMonth === m.val ? 'color: var(--primary-color); font-size: 13px;' : 'color: #94a3b8; font-size: 11px;'}">
+                        ${m.name}
+                    </div>
+                `).join('');
+            }
+
+            if(yearsContainer) {
+                yearsContainer.innerHTML = yearsArr.map(y => `
+                    <div onclick="tempSelectedYear='${y}'; renderCustomMonthPickerLists();" style="padding: 6px 12px; border-radius: 8px; cursor: pointer; text-align: center; font-weight: bold; width: 100%; ${tempSelectedYear === y ? 'color: var(--primary-color); font-size: 13px;' : 'color: #94a3b8; font-size: 11px;'}">
+                        ${y}
+                    </div>
+                `).join('');
+            }
+        }
+
+        function confirmCustomMonthSelection() {
+            let selectedVal = `${tempSelectedYear}-${tempSelectedMonth}`;
+            document.getElementById('custom-month-modal').classList.remove('show');
+
+            if(activeMonthPickerTarget === 'staff_sales') {
+                selectedStaffSalesMonthFilter = selectedVal;
+                let displayInput = document.getElementById('staff-sales-month-picker-display');
+                if(displayInput) displayInput.value = formatDisplayMonthYear(selectedStaffSalesMonthFilter);
+                renderStaffSalesSummaryPage();
+            } else {
+                selectedMonthlyFilter = selectedVal;
+                let displayInput = document.getElementById('monthly-customer-picker-display');
+                if(displayInput) displayInput.value = formatDisplayMonthYear(selectedMonthlyFilter);
+                renderMonthlyCustomerTableData();
+            }
+        }
+
+        function clearCustomMonthSelection() {
+            let now = new Date();
+            tempSelectedYear = String(now.getFullYear());
+            tempSelectedMonth = String(now.getMonth() + 1).padStart(2, '0');
+            renderCustomMonthPickerLists();
+        }
+
+        function renderMonthlyCustomerTableData() {
+            const sales = getSales();
+            const tbody = document.getElementById('monthly-customer-tbody');
+            if(!tbody) return;
+
+            let filtered = sales.filter(s => {
+                let dateStr = getFormattedDate(s.date);
+                return dateStr.startsWith(selectedMonthlyFilter);
+            });
+
+            let totalAmountSum = 0;
+            filtered.forEach(s => {
+                totalAmountSum += (Number(s.totalAmount) || 0);
+            });
+            const curr = dict.currency;
+
+            let sumDisplay = document.getElementById('monthly-total-amount-sum');
+            if(sumDisplay) sumDisplay.innerText = `${totalAmountSum.toLocaleString()} ${curr}`;
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 12px;">No sales records found for this month</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((s, index) => {
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><b>${s.invoiceNo}</b></td>
+                        <td>${getFormattedDate(s.date)}</td>
+                        <td><b>${s.customer}</b></td>
+                        <td>${s.phone || '-'}<br><span style="font-size: 9px; color: var(--text-muted);">${s.address || '-'}</span></td>
+                        <td>${(s.items || []).map(i => `${i.name} (${i.qty})`).join(', ')}</td>
+                        <td style="font-weight: bold; color: var(--accent-glow);">${(Number(s.totalAmount) || 0).toLocaleString()} ${curr}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function exportMonthlyCustomersPDF() {
+            const container = document.getElementById('monthly-report-card-container');
+            if(!container) return;
+
+            showCustomModal('Generating PDF/Image file, please wait...', 'Exporting');
+
+            html2canvas(container, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
+                closeCustomModal();
+                const dataUrl = canvas.toDataURL('image/png');
+                let link = document.createElement('a');
+                link.download = `Monthly-Customer-List-${selectedMonthlyFilter}.png`;
+                link.href = dataUrl;
+                link.click();
+                showCustomModal('Monthly customer list saved successfully as image/PDF format.', 'Success');
+            }).catch(err => {
+                closeCustomModal();
+                showCustomModal('Failed to generate export file.', 'Error');
+            });
+        }
+        // ----------------------------------------------------
 
         let currentEditingSaleId = null;
         let currentEditingOptions = [];
@@ -2468,7 +2761,6 @@
         }
 
         function renderCustomerStatusPage() {
-            const dict = langData[currentLang];
             const curr = dict.currency;
             const contentArea = document.getElementById('content-area-container');
             
@@ -2558,7 +2850,7 @@
                 canEditStatus = false;
             }
 
-            const curr = langData[currentLang].currency;
+            const curr = dict.currency;
             tbody.innerHTML = filtered.map((s, index) => {
                 let currentStatus = s.deliveryStatus || 'order';
                 let badgeColor = 'badge-orange';
@@ -2659,7 +2951,6 @@
 
         function showInvoiceModal(sale) {
             if(!sale) return;
-            const dict = langData[currentLang];
             document.querySelector('.t-invpreview').innerText = dict.invpreview;
             document.querySelector('.t-invdate').innerText = dict.invdate;
             document.querySelector('.t-invcust').innerText = dict.invcust;
@@ -2703,107 +2994,6 @@
             document.getElementById('invoice-modal').classList.add('show');
         }
         function closeInvoiceModal() { document.getElementById('invoice-modal').classList.remove('show'); }
-
-        // Bluetooth Mini Printer Printing Function
-        async function printInvoiceWithBluetooth() {
-            if (!navigator.bluetooth) {
-                alert("သင်၏ Browser သည် Bluetooth ကို မထောက်ပံ့ပါ။ (Chrome သို့မဟုတ် Edge ကို အသုံးပြုပါ)");
-                return;
-            }
-
-            try {
-                // Request Bluetooth Device
-                const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', '0000ff00-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455']
-                });
-
-                const server = await device.gatt.connect();
-                let characteristic = null;
-                
-                // Find primary service for ESC/POS printing
-                const services = await server.getPrimaryServices();
-                for (let service of services) {
-                    const characteristics = await service.getCharacteristics();
-                    for (let c of characteristics) {
-                        if (c.properties.write || c.properties.writeWithoutResponse) {
-                            characteristic = c;
-                            break;
-                        }
-                    }
-                    if (characteristic) break;
-                }
-
-                if (!characteristic) {
-                    alert("Printer ၏ Write Characteristic ကို ရှာမတွေ့ပါ။");
-                    return;
-                }
-
-                // ESC/POS Command Generation for Mini Thermal Printer
-                const encoder = new TextEncoder();
-                let commands = [];
-
-                // Initialize Printer
-                commands.push(new Uint8Array([0x1B, 0x40]));
-                // Center alignment
-                commands.push(new Uint8Array([0x1B, 0x61, 0x01]));
-
-                // Shop Name
-                let shopName = getActiveShopName() + "\n";
-                commands.push(encoder.encode(shopName));
-
-                // Divider
-                commands.push(encoder.encode("--------------------------------\n"));
-
-                // Left alignment
-                commands.push(new Uint8Array([0x1B, 0x61, 0x00]));
-
-                let invNo = "Invoice No: " + document.getElementById('inv-no').innerText + "\n";
-                let invDate = "Date: " + document.getElementById('inv-date').innerText + "\n";
-                let invCust = "Customer: " + document.getElementById('inv-customer').innerText + "\n";
-                let invContact = "Phone/Address: " + document.getElementById('inv-contact').innerText + "\n";
-                
-                commands.push(encoder.encode(invNo + invDate + invCust + invContact));
-                commands.push(encoder.encode("--------------------------------\n"));
-                commands.push(encoder.encode("ITEM          QTY      PRICE\n"));
-                commands.push(encoder.encode("--------------------------------\n"));
-
-                // Items list from modal
-                let rows = document.querySelectorAll('#inv-items-body tr');
-                rows.forEach(row => {
-                    let cols = row.querySelectorAll('td');
-                    if(cols.length >= 3) {
-                        let name = cols[0].innerText.padEnd(14, ' ');
-                        let qty = cols[1].innerText.padEnd(8, ' ');
-                        let price = cols[2].innerText;
-                        let line = `${name} ${qty} ${price}\n`;
-                        commands.push(encoder.encode(line));
-                    }
-                });
-
-                commands.push(encoder.encode("--------------------------------\n"));
-                
-                // Total
-                commands.push(new Uint8Array([0x1B, 0x61, 0x02])); // Right align
-                let totalText = "Total: " + document.getElementById('inv-total-price').innerText + "\n\n";
-                commands.push(encoder.encode(totalText));
-
-                // Footer
-                commands.push(new Uint8Array([0x1B, 0x61, 0x01])); // Center align
-                commands.push(encoder.encode("~ Thank you for your purchase ~\n\n\n"));
-
-                // Send to Bluetooth Printer in chunks
-                for (let cmd of commands) {
-                    await characteristic.writeValueWithoutResponse ? characteristic.writeValueWithoutResponse(cmd) : characteristic.writeValue(cmd);
-                }
-
-                showCustomModal("Bluetooth Printer ဖြင့် ဘောက်ချာ အောင်မြင်စွာ ထုတ်ပြီးပါပြီ။", "အောင်မြင်ပါသည်");
-
-            } catch (error) {
-                console.error(error);
-                alert("Printer ချိတ်ဆက်ရာတွင် အမှားအယွင်းရှိပါသည်: " + error.message);
-            }
-        }
 
         function generateInvoiceImage() {
             const invContainer = document.getElementById('invoice-card-container');
@@ -2896,10 +3086,9 @@
                 if(inputDate) inputDate.value = todayDefaultStr;
                 renderCustomerStatusTable();
             } else if(mode === 'staff-sales') {
-                rangeStartDate = '';
-                rangeEndDate = '';
-                const inputDate = document.getElementById('staff-sales-date-range-filter');
-                if(inputDate) inputDate.value = 'All Dates';
+                selectedStaffSalesMonthFilter = new Date().toISOString().slice(0, 7);
+                const inputDate = document.getElementById('staff-sales-month-picker-display');
+                if(inputDate) inputDate.value = formatDisplayMonthYear(selectedStaffSalesMonthFilter);
                 renderStaffSalesSummaryPage();
             } else {
                 singleDateFilter = '';
@@ -2910,100 +3099,10 @@
             }
         }
 
-        function openRangeCalendarModal() {
-            tempRangeStart = rangeStartDate;
-            tempRangeEnd = rangeEndDate;
-            selectingRangeStart = true;
-            updateRangeCalendarInstructions();
-            renderRangeCalendarGrid();
-            document.getElementById('range-calendar-modal-wrapper').style.display = 'flex';
-        }
-
-        function closeRangeCalendarModal(e) {
-            if(!e || e.target.id === 'range-calendar-modal-wrapper') {
-                document.getElementById('range-calendar-modal-wrapper').style.display = 'none';
-            }
-        }
-
-        function updateRangeCalendarInstructions() {
-            const inst = document.getElementById('range-cal-instructions');
-            if(inst) {
-                if(selectingRangeStart) {
-                    inst.innerText = "Select Start Date";
-                } else {
-                    inst.innerText = "Select End Date";
-                }
-            }
-        }
-
-        function changeRangeMonth(dir) {
-            rangeCalMonth += dir;
-            if(rangeCalMonth > 11) { rangeCalMonth = 0; rangeCalYear++; }
-            else if(rangeCalMonth < 0) { rangeCalMonth = 11; rangeCalYear--; }
-            renderRangeCalendarGrid();
-        }
-
-        function renderRangeCalendarGrid() {
-            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            document.getElementById('range-cal-month-year').innerText = `${monthNames[rangeCalMonth]} ${rangeCalYear}`;
-            const gridBody = document.getElementById('range-cal-grid-body');
-            gridBody.innerHTML = `<div class="day-name">Mon</div><div class="day-name">Tue</div><div class="day-name">Wed</div><div class="day-name">Thu</div><div class="day-name">Fri</div><div class="day-name">Sat</div><div class="day-name">Sun</div>`;
-            const todayStr = getFormattedDate(new Date());
-            const firstDayIndex = (new Date(rangeCalYear, rangeCalMonth, 1).getDay() + 6) % 7;
-            const totalDays = new Date(rangeCalYear, rangeCalMonth + 1, 0).getDate();
-            const prevTotalDays = new Date(rangeCalYear, rangeCalMonth, 0).getDate();
-
-            for(let i = firstDayIndex - 1; i >= 0; i--) {
-                let cell = document.createElement('div'); cell.className = "date-cell muted"; cell.innerText = prevTotalDays - i; gridBody.appendChild(cell);
-            }
-            for(let d = 1; d <= totalDays; d++) {
-                let cell = document.createElement('div'); cell.className = "date-cell"; cell.innerText = d;
-                let fullDateStr = `${rangeCalYear}-${String(rangeCalMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                if(fullDateStr === todayStr) cell.classList.add('today');
-                
-                if(fullDateStr === tempRangeStart || fullDateStr === tempRangeEnd) {
-                    cell.classList.add('selected');
-                } else if(tempRangeStart && tempRangeEnd && fullDateStr > tempRangeStart && fullDateStr < tempRangeEnd) {
-                    cell.classList.add('in-range');
-                }
-                
-                cell.addEventListener('click', () => {
-                    if(selectingRangeStart) {
-                        tempRangeStart = fullDateStr;
-                        tempRangeEnd = fullDateStr;
-                        selectingRangeStart = false;
-                    } else {
-                        if(fullDateStr < tempRangeStart) {
-                            tempRangeStart = fullDateStr;
-                        } else {
-                            tempRangeEnd = fullDateStr;
-                        }
-                        selectingRangeStart = true;
-                    }
-                    updateRangeCalendarInstructions();
-                    renderRangeCalendarGrid();
-                });
-                gridBody.appendChild(cell);
-            }
-        }
-
-        function confirmRangeCalendarSelection() {
-            if(!tempRangeStart) tempRangeStart = getFormattedDate(new Date());
-            if(!tempRangeEnd) tempRangeEnd = tempRangeStart;
-
-            rangeStartDate = tempRangeStart;
-            rangeEndDate = tempRangeEnd;
-            const inputDate = document.getElementById('staff-sales-date-range-filter');
-            if(inputDate) inputDate.value = `${rangeStartDate} to ${rangeEndDate}`;
-            document.getElementById('range-calendar-modal-wrapper').style.display = 'none';
-            renderStaffSalesSummaryPage();
-        }
-
         let selectedStaffRoleType = 'staff';
         let selectedStaffRoleText = 'Staff (No permission to edit/delete)';
 
         function renderStaffsPage() {
-            const dict = langData[currentLang];
             const staffs = getStaffs();
             const contentArea = document.getElementById('content-area-container');
             contentArea.innerHTML = `
@@ -3039,28 +3138,17 @@
         }
 
         function renderStaffSalesSummaryPage() {
-            const dict = langData[currentLang];
             const sales = getSales();
             const staffs = getStaffs();
             const contentArea = document.getElementById('content-area-container');
             const curr = dict.currency;
 
-            const dateInputEl = document.getElementById('staff-sales-date-range-filter');
-            if (dateInputEl && dateInputEl.value && dateInputEl.value.includes(' to ')) {
-                let parts = dateInputEl.value.split(' to ');
-                rangeStartDate = parts[0].trim();
-                rangeEndDate = parts[1].trim();
-            }
+            let displayMonthVal = formatDisplayMonthYear(selectedStaffSalesMonthFilter);
 
-            let dateRangeText = (rangeStartDate && rangeEndDate) ? `${rangeStartDate} to ${rangeEndDate}` : 'All Dates';
-
-            let filteredSales = sales;
-            if (rangeStartDate && rangeEndDate) {
-                filteredSales = filteredSales.filter(s => {
-                    let sDate = getFormattedDate(s.date);
-                    return sDate >= rangeStartDate && sDate <= rangeEndDate;
-                });
-            }
+            let filteredSales = sales.filter(s => {
+                let dateStr = getFormattedDate(s.date);
+                return dateStr.startsWith(selectedStaffSalesMonthFilter);
+            });
 
             let shopOwnerName = currentUser.name || currentUser.username;
 
@@ -3088,22 +3176,21 @@
                 total: staffStats[name].total
             }));
 
+            statsArray.sort((a, b) => b.total - a.total);
+
             contentArea.innerHTML = `
                 <div class="page-title-box"><h2><i class="fa-solid fa-chart-column" style="color: var(--primary-color);"></i> Staff Sales Summary</h2></div>
                 <div class="card">
-                    <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 5px;"><i class="fa-solid fa-calendar"></i> Filter by Date Range</div>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <input type="text" id="staff-sales-date-range-filter" class="form-control" readonly placeholder="Date Range" onclick="openRangeCalendarModal()" style="cursor: pointer; background: #fff;" value="${dateRangeText}">
-                        <div style="display: flex; justify-content: flex-end;">
-                            <button type="button" onclick="clearDateFilter('staff-sales')" class="btn btn-primary" style="width: auto; padding: 6px 14px;" title="Reset"><i class="fa-solid fa-rotate-left"></i></button>
-                        </div>
+                    <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 5px;"><i class="fa-solid fa-calendar"></i> Select Month</div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <input type="text" id="staff-sales-month-picker-display" class="form-control" readonly value="${displayMonthVal}" onclick="openCustomMonthModal('staff_sales')" style="cursor: pointer; background: #fff;">
                     </div>
                 </div>
                 <div class="table-box">
                     <table>
                         <thead><tr><th>No</th><th>Staff / User Name</th><th>Total Invoices</th><th>Total Sales Amount</th></tr></thead>
                         <tbody>
-                            ${statsArray.length === 0 ? `<tr><td colspan="4" style="text-align: center; padding: 12px;">No sales records found for this period.</td></tr>` :
+                            ${statsArray.length === 0 ? `<tr><td colspan="4" style="text-align: center; padding: 12px;">No sales records found for this month.</td></tr>` :
                                 statsArray.map((st, idx) => `
                                     <tr>
                                         <td>${idx + 1}</td>
@@ -3177,7 +3264,6 @@
         let selectedProDurationId = null;
 
         function renderUserProPage() {
-            const dict = langData[currentLang];
             const contentArea = document.getElementById('content-area-container');
             
             let pricingList = systemSettings.pricingPlans || defaultPricingPlans;
@@ -3351,7 +3437,6 @@
         }
 
         function renderUserDatailsPage() {
-            const dict = langData[currentLang];
             let planBadgeClass = currentUser.plan === 'free' ? 'badge-purple' : (currentUser.plan === 'pro' ? 'badge-orange' : 'badge-green');
             let planDisplayLabel = currentUser.plan === 'free' ? 'Lifetime Plan' : 'Pro Plan';
             const contentArea = document.getElementById('content-area-container');
@@ -3360,7 +3445,7 @@
             let expDisplay = currentUser.plan === 'pro' ? (currentUser.proExpDate ? currentUser.proExpDate : 'Unlimited') : '-';
 
             contentArea.innerHTML = `
-                <div class="page-title-box"><h2><i class="fa-solid fa-user-gear" style="color: var(--primary-color);"></i> ${dict.accDetails}</h2></div>
+                <div class="page-title-box"><h2><i class="fa-solid fa-user-gear" style="color: var(--primary-color);"></i> Account Details</h2></div>
                 <div class="card">
                     <div class="card-title">Profile Settings</div>
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
@@ -3376,14 +3461,14 @@
                         <label>Profile Picture</label>
                         <input type="file" id="shop-profile-pic-file" accept="image/*" class="form-control" style="padding: 6px;">
                     </div>
-                    <button type="button" onclick="uploadShopProfilePic()" class="btn btn-success-custom" style="margin-top: 4px;"><i class="fa-solid fa-upload"></i> Save Image</button>
+                    <button type="button" onclick="uploadShopProfilePic()" class="btn btn-success-custom" style="margin-top: 4px;"><i class="fa-solid fa-upload"></i> Save Picture</button>
                 </div>
                 <div class="card">
                     <div class="card-title">Account Information</div>
-                    <p style="margin-bottom:4px;"><b>Name:</b> ${currentUser.name}</p>
+                    <p style="margin-bottom:4px;"><b>Shop Name:</b> ${currentUser.name}</p>
                     <p style="margin-bottom:4px;"><b>Phone Number:</b> ${currentUser.phone || '-'}</p>
                     <p style="margin-bottom:4px;"><b>Username:</b> ${currentUser.username}</p>
-                    <p style="margin-bottom:4px;"><b>Pro Plan Expiration:</b> <b style="color: var(--accent-glow);">${expDisplay}</b></p>
+                    <p style="margin-bottom:4px;"><b>Pro Plan Expiry Date:</b> <b style="color: var(--accent-glow);">${expDisplay}</b></p>
                 </div>
                 <div class="card">
                     <div class="card-title">Change Password</div>
@@ -3391,16 +3476,12 @@
                     <div class="form-group"><label>New Password (8 digits)</label><input type="password" id="user-new-pass" class="form-control" minlength="8" maxlength="8"></div>
                     <button type="button" onclick="changeUserPassword()" class="btn btn-success-custom" style="margin-top:6px;">Change Password</button>
                 </div>
-                <div class="card">
-                    <div class="card-title"><i class="fa-solid fa-right-from-bracket"></i> Logout Account</div>
-                    <button type="button" onclick="logoutApp()" class="btn btn-danger" style="background: rgba(248, 113, 113, 0.2); color: #dc2626; border-color: rgba(248, 113, 113, 0.4);"><i class="fa-solid fa-right-from-bracket"></i> ${dict.logout}</button>
-                </div>
             `;
         }
 
         async function uploadShopProfilePic() {
             let fileInput = document.getElementById('shop-profile-pic-file');
-            if(!fileInput.files[0]) { showCustomModal('Please select an image file first.', 'Warning'); return; }
+            if(!fileInput.files[0]) { showCustomModal('Please select an image first.', 'Warning'); return; }
             
             let reader = new FileReader();
             reader.onload = async function(e) {
@@ -3450,7 +3531,6 @@
         }
 
         function renderSettingsPage() {
-            const dict = langData[currentLang];
             const contentArea = document.getElementById('content-area-container');
             let isPro = currentUser && currentUser.plan === 'pro';
             let isShop = currentUser && currentUser.role === 'shop';
