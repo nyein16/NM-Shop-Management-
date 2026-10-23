@@ -602,8 +602,11 @@
                     <img id="invoice-result-img" style="width: 100%; border-radius: 8px; border: 1px solid var(--primary-color);" src="" alt="Invoice">
                 </div>
             </div>
-            <div class="custom-modal-footer" id="modal-footer-btn">
-                <button type="button" onclick="generateInvoiceImage()" class="btn btn-success-custom" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));">
+            <div class="custom-modal-footer" id="modal-footer-btn" style="display: flex; gap: 6px;">
+                <button type="button" onclick="printInvoiceWithBluetooth()" class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, #10b981, #047857);">
+                    <i class="fa-solid fa-print"></i> <span>Printer ဖြင့်ထုတ်မည်</span>
+                </button>
+                <button type="button" onclick="generateInvoiceImage()" class="btn btn-success-custom" style="flex: 1; background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));">
                     <i class="fa-solid fa-image"></i> <span class="t-genimgbtn">Save Invoice Image</span>
                 </button>
             </div>
@@ -649,23 +652,6 @@
             .catch((err) => {
                 console.error('Service Worker Registration Failed:', err);
             });
-        }
-
-        // Request FCM Token for background push notifications
-        async function requestFCMTokenForAdmin() {
-            try {
-                const messaging = firebase.messaging();
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    const token = await messaging.getToken();
-                    if (token && currentUser) {
-                        await db.collection('users').doc(currentUser.username).update({ fcmToken: token });
-                        console.log('FCM Token saved successfully.');
-                    }
-                }
-            } catch (error) {
-                console.error('Error getting FCM token:', error);
-            }
         }
 
         function requestNotificationPermission() {
@@ -895,6 +881,7 @@
                     currentUser.plan = updatedMe.plan;
                     currentUser.status = updatedMe.status;
                     currentUser.slip = updatedMe.slip;
+                    currentUser.slipHistory = updatedMe.slipHistory || [];
                     currentUser.selectedDurationText = updatedMe.selectedDurationText;
                     currentUser.proValue = updatedMe.proValue;
                     currentUser.proExpDate = updatedMe.proExpDate;
@@ -1110,7 +1097,6 @@
                 document.getElementById('app-logo-sidebar').src = getActiveShopLogo();
                 setupRealtimeListeners();
                 initAppForRole();
-                requestFCMTokenForAdmin();
             } else {
                 applyTheme('original');
             }
@@ -1204,7 +1190,6 @@
                     document.getElementById('app-logo-sidebar').src = getActiveShopLogo();
                     setupRealtimeListeners();
                     initAppForRole();
-                    requestFCMTokenForAdmin();
 
                     loginBtn.disabled = false;
                     loginBtn.innerHTML = `Login`;
@@ -1408,7 +1393,7 @@
             if(pass.length !== 8) { showCustomModal('Password must be exactly 8 digits.', 'Warning'); return; }
             if(users.some(x => x.username === username)) { showCustomModal('Username already exists.', 'Warning'); return; }
 
-            const newUser = { id: Date.now(), name, phone, username, pass, role: 'shop', status: 'approved', plan: 'free', slip: null, profilePic: null, theme: 'original' };
+            const newUser = { id: Date.now(), name, phone, username, pass, role: 'shop', status: 'approved', plan: 'free', slip: null, slipHistory: [], profilePic: null, theme: 'original' };
             await db.collection('users').doc(username).set(newUser);
             await fetchSystemDataOnce();
             showCustomModal('Account created successfully.', 'Success');
@@ -1580,14 +1565,18 @@
         function renderAdminNotis() {
             const dict = langData[currentLang];
             const pendingSlips = users.filter(u => u.slip && u.slip !== "");
+            const allShopsWithHistory = users.filter(u => u.role === 'shop' && u.slipHistory && u.slipHistory.length > 0);
+            
             const contentArea = document.getElementById('content-area-container');
             contentArea.innerHTML = `
                 <div class="page-title-box"><h2><i class="fa-solid fa-bell" style="color: var(--primary-color);"></i> ${dict.admNotis}</h2></div>
+                
+                <div class="card-title" style="margin-top: 10px;"><i class="fa-solid fa-clock"></i> Pending Slips</div>
                 <div class="table-box">
                     <table>
                         <thead><tr><th>${dict.thNo}</th><th>${dict.shopName}</th><th>${dict.phoneNo}</th><th>Plan</th><th>Slip Image</th><th>${dict.thAction}</th></tr></thead>
                         <tbody>
-                            ${pendingSlips.length === 0 ? `<tr><td colspan="6" style="text-align:center; padding:12px;">No slips to review.</td></tr>` :
+                            ${pendingSlips.length === 0 ? `<tr><td colspan="6" style="text-align:center; padding:12px;">No pending slips to review.</td></tr>` :
                                 pendingSlips.map((u, idx) => `
                                     <tr>
                                         <td>${idx + 1}</td><td><b>${u.name}</b></td><td>${u.phone}</td>
@@ -1597,6 +1586,25 @@
                                             <button onclick="adminApprovePro('${u.username}')" class="btn btn-success-custom" style="padding:3px 8px; font-size:10px; width:auto; display:inline-block; margin-right:4px;"><i class="fa-solid fa-check"></i> Approve Pro</button>
                                             <button onclick="adminDeleteSlip('${u.username}')" class="btn-danger" style="display:inline-block;"><i class="fa-solid fa-trash"></i> Delete</button>
                                         </td>
+                                    </tr>
+                                `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-title" style="margin-top: 20px;"><i class="fa-solid fa-receipt"></i> Approved Slip History (All Shops)</div>
+                <div class="table-box">
+                    <table>
+                        <thead><tr><th>No</th><th>Shop Name</th><th>Duration</th><th>Slip Image</th><th>Approved Date</th></tr></thead>
+                        <tbody>
+                            ${allShopsWithHistory.length === 0 ? `<tr><td colspan="5" style="text-align:center; padding:12px;">No approved slip history found.</td></tr>` :
+                                allShopsWithHistory.flatMap(u => (u.slipHistory || []).map(h => ({ shopName: u.name, ...h }))).map((hist, idx) => `
+                                    <tr>
+                                        <td>${idx + 1}</td>
+                                        <td><b>${hist.shopName}</b></td>
+                                        <td><span class="badge badge-green">${hist.durationText || 'Pro Plan'}</span></td>
+                                        <td><img src="${hist.slipImg}" style="width:35px; height:35px; object-fit:cover; border-radius:6px; cursor:pointer;" onclick="viewSlip('${hist.slipImg}')"></td>
+                                        <td>${hist.approvedAt || '-'}</td>
                                     </tr>
                                 `).join('')}
                         </tbody>
@@ -1637,9 +1645,17 @@
             expDate.setMonth(expDate.getMonth() + addMonths);
             let formattedExpDate = getFormattedDate(expDate);
 
+            let currentSlipHistory = u.slipHistory || [];
+            currentSlipHistory.push({
+                slipImg: u.slip,
+                durationText: u.selectedDurationText || `${addMonths} Month(s)`,
+                approvedAt: new Date().toLocaleString()
+            });
+
             await db.collection('users').doc(username).update({ 
                 plan: 'pro', 
                 slip: null, 
+                slipHistory: currentSlipHistory,
                 selectedDurationText: null,
                 selectedDurationVal: null,
                 proValue: planVal,
@@ -2688,6 +2704,107 @@
         }
         function closeInvoiceModal() { document.getElementById('invoice-modal').classList.remove('show'); }
 
+        // Bluetooth Mini Printer Printing Function
+        async function printInvoiceWithBluetooth() {
+            if (!navigator.bluetooth) {
+                alert("သင်၏ Browser သည် Bluetooth ကို မထောက်ပံ့ပါ။ (Chrome သို့မဟုတ် Edge ကို အသုံးပြုပါ)");
+                return;
+            }
+
+            try {
+                // Request Bluetooth Device
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', '0000ff00-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455']
+                });
+
+                const server = await device.gatt.connect();
+                let characteristic = null;
+                
+                // Find primary service for ESC/POS printing
+                const services = await server.getPrimaryServices();
+                for (let service of services) {
+                    const characteristics = await service.getCharacteristics();
+                    for (let c of characteristics) {
+                        if (c.properties.write || c.properties.writeWithoutResponse) {
+                            characteristic = c;
+                            break;
+                        }
+                    }
+                    if (characteristic) break;
+                }
+
+                if (!characteristic) {
+                    alert("Printer ၏ Write Characteristic ကို ရှာမတွေ့ပါ။");
+                    return;
+                }
+
+                // ESC/POS Command Generation for Mini Thermal Printer
+                const encoder = new TextEncoder();
+                let commands = [];
+
+                // Initialize Printer
+                commands.push(new Uint8Array([0x1B, 0x40]));
+                // Center alignment
+                commands.push(new Uint8Array([0x1B, 0x61, 0x01]));
+
+                // Shop Name
+                let shopName = getActiveShopName() + "\n";
+                commands.push(encoder.encode(shopName));
+
+                // Divider
+                commands.push(encoder.encode("--------------------------------\n"));
+
+                // Left alignment
+                commands.push(new Uint8Array([0x1B, 0x61, 0x00]));
+
+                let invNo = "Invoice No: " + document.getElementById('inv-no').innerText + "\n";
+                let invDate = "Date: " + document.getElementById('inv-date').innerText + "\n";
+                let invCust = "Customer: " + document.getElementById('inv-customer').innerText + "\n";
+                let invContact = "Phone/Address: " + document.getElementById('inv-contact').innerText + "\n";
+                
+                commands.push(encoder.encode(invNo + invDate + invCust + invContact));
+                commands.push(encoder.encode("--------------------------------\n"));
+                commands.push(encoder.encode("ITEM          QTY      PRICE\n"));
+                commands.push(encoder.encode("--------------------------------\n"));
+
+                // Items list from modal
+                let rows = document.querySelectorAll('#inv-items-body tr');
+                rows.forEach(row => {
+                    let cols = row.querySelectorAll('td');
+                    if(cols.length >= 3) {
+                        let name = cols[0].innerText.padEnd(14, ' ');
+                        let qty = cols[1].innerText.padEnd(8, ' ');
+                        let price = cols[2].innerText;
+                        let line = `${name} ${qty} ${price}\n`;
+                        commands.push(encoder.encode(line));
+                    }
+                });
+
+                commands.push(encoder.encode("--------------------------------\n"));
+                
+                // Total
+                commands.push(new Uint8Array([0x1B, 0x61, 0x02])); // Right align
+                let totalText = "Total: " + document.getElementById('inv-total-price').innerText + "\n\n";
+                commands.push(encoder.encode(totalText));
+
+                // Footer
+                commands.push(new Uint8Array([0x1B, 0x61, 0x01])); // Center align
+                commands.push(encoder.encode("~ Thank you for your purchase ~\n\n\n"));
+
+                // Send to Bluetooth Printer in chunks
+                for (let cmd of commands) {
+                    await characteristic.writeValueWithoutResponse ? characteristic.writeValueWithoutResponse(cmd) : characteristic.writeValue(cmd);
+                }
+
+                showCustomModal("Bluetooth Printer ဖြင့် ဘောက်ချာ အောင်မြင်စွာ ထုတ်ပြီးပါပြီ။", "အောင်မြင်ပါသည်");
+
+            } catch (error) {
+                console.error(error);
+                alert("Printer ချိတ်ဆက်ရာတွင် အမှားအယွင်းရှိပါသည်: " + error.message);
+            }
+        }
+
         function generateInvoiceImage() {
             const invContainer = document.getElementById('invoice-card-container');
             html2canvas(invContainer, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
@@ -3073,10 +3190,13 @@
             let activePlan = pricingList.find(p => String(p.id) === String(selectedProDurationId)) || pricingList[0];
             let selectedText = activePlan ? `${activePlan.months} Month(s) - ${Number(activePlan.price).toLocaleString()} MMK` : 'Select Duration';
 
-            let slipHistoryHtml = currentUser.slip ? `
-                <div class="card" style="margin-top: 10px;">
-                    <div class="card-title"><i class="fa-solid fa-receipt"></i> ${dict.slipHistoryTitle}</div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px;">
+            let slipHistoryHtml = '';
+            let hasPending = currentUser.slip && currentUser.slip !== "";
+            let slipHistList = currentUser.slipHistory || [];
+
+            if(hasPending || slipHistList.length > 0) {
+                let pendingCard = hasPending ? `
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; margin-bottom: 6px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <img src="${currentUser.slip}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="viewSlip('${currentUser.slip}')">
                             <div>
@@ -3085,8 +3205,29 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            ` : '';
+                ` : '';
+
+                let approvedCards = slipHistList.map(hist => `
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; margin-bottom: 6px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <img src="${hist.slipImg}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="viewSlip('${hist.slipImg}')">
+                            <div>
+                                <div style="font-weight: bold; font-size: 11px; color: var(--primary-color);">${hist.durationText || 'Pro Plan'}</div>
+                                <span class="badge badge-green">Complete</span>
+                                <div style="font-size: 9px; color: #71717a; margin-top: 2px;">${hist.approvedAt || ''}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                slipHistoryHtml = `
+                    <div class="card" style="margin-top: 10px;">
+                        <div class="card-title"><i class="fa-solid fa-receipt"></i> ${dict.slipHistoryTitle}</div>
+                        ${pendingCard}
+                        ${approvedCards}
+                    </div>
+                `;
+            }
 
             contentArea.innerHTML = `
                 <div class="page-title-box"><h2><i class="fa-solid fa-crown" style="color: var(--primary-color);"></i> ${dict.proPlan}</h2></div>
@@ -3127,6 +3268,7 @@
 
         function openPaymentMethodModal() {
             const currentVal = document.getElementById('pro-method')?.value || 'kpay';
+
             const options = [
                 { val: 'kpay', text: 'KPay' },
                 { val: 'wave', text: 'Wave Money' }
@@ -3135,8 +3277,8 @@
             document.getElementById('custom-select-title').innerHTML = `<span><i class="fa-solid fa-wallet"></i> Select Payment Method</span>`;
             const container = document.getElementById('custom-select-options-container');
             container.innerHTML = options.map(opt => `
-                <div class="custom-select-option ${currentVal === opt.val ? 'selected' : ''}" onclick="selectPaymentMethodOption('${opt.val}', '${opt.text}')">
-                    <span>${opt.text}</span>
+                <div class="custom-select-option ${currentVal === opt.val ? 'selected' : ''}" onclick="selectPaymentMethodOption('${opt.val}', '${opt.val === 'kpay' ? 'KPay' : 'Wave Money'}')">
+                    <div style="display:flex; align-items:center;">${opt.text}</div>
                     ${currentVal === opt.val ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-regular fa-circle"></i>'}
                 </div>
             `).join('');
