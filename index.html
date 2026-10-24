@@ -18,8 +18,10 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
 
-    <!-- html2canvas Library -->
+    <!-- html2canvas & jsPDF Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #092c20 0%, #061c14 100%);
@@ -354,7 +356,7 @@
 
         #custom-select-modal .custom-modal {
             border: 1px solid var(--primary-color);
-            background: rgba(255, 255, 255, 0.98);
+            background: rgba(255, 255, 258, 0.98);
         }
         #custom-select-modal .custom-modal-body {
             background: rgba(242, 241, 237, 0.6);
@@ -2435,7 +2437,7 @@
             }).join('');
         }
 
-        // --- Monthly Customers Page & PDF/Image Export Logic ---
+        // --- Monthly Customers Page & PDF Export Logic ---
         let selectedMonthlyFilter = new Date().toISOString().slice(0, 7); // e.g. "2026-10"
 
         function getMonthName(monthNumberStr) {
@@ -2461,12 +2463,14 @@
             contentArea.innerHTML = `
                 <div class="page-title-box" style="flex-direction: row; justify-content: space-between; align-items: center;">
                     <h2><i class="fa-solid fa-calendar-days" style="color: var(--accent-glow);"></i> ${dict.monthlyCust}</h2>
-                    <button type="button" onclick="exportMonthlyCustomersPDF()" class="btn btn-success-custom" style="width: auto; padding: 6px 14px;"><i class="fa-solid fa-file-pdf"></i> Export PDF / Image</button>
+                    <button type="button" onclick="exportMonthlyCustomersPDF()" class="btn btn-success-custom" style="width: auto; padding: 6px 14px;"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
                 </div>
                 <div class="card">
                     <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 5px;"><i class="fa-solid fa-calendar"></i> Select Month</div>
+                    <!-- ပြင်ရန်ပုံ ၂: တစ်တန်းတည်းဖြစ်စေရန် Flexbox သုံးထားသည် -->
                     <div style="display: flex; gap: 6px; align-items: center;">
-                        <input type="text" id="monthly-customer-picker-display" class="form-control" readonly value="${displayMonthVal}" onclick="openCustomMonthModal('monthly')" style="cursor: pointer; background: #fff;">
+                        <input type="text" id="monthly-customer-picker-display" class="form-control" readonly value="${displayMonthVal}" onclick="openCustomMonthModal('monthly')" style="cursor: pointer; background: #fff; flex: 1;">
+                        <button type="button" onclick="clearDateFilter('monthly')" class="btn btn-primary" style="width: auto; padding: 7px 14px;" title="Reset"><i class="fa-solid fa-rotate-left"></i></button>
                     </div>
                 </div>
 
@@ -2533,7 +2537,6 @@
                 { val: '10', name: 'Oct' }, { val: '11', name: 'Nov' }, { val: '12', name: 'Dec' }
             ];
 
-            // Years up to 2100 (starting from 2020)
             let yearsArr = [];
             for(let y = 2020; y <= 2100; y++) {
                 yearsArr.push(String(y));
@@ -2623,25 +2626,80 @@
         }
 
         function exportMonthlyCustomersPDF() {
-            const container = document.getElementById('monthly-report-card-container');
-            if(!container) return;
-
-            showCustomModal('Generating PDF/Image file, please wait...', 'Exporting');
-
-            html2canvas(container, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
-                closeCustomModal();
-                const dataUrl = canvas.toDataURL('image/png');
-                let link = document.createElement('a');
-                link.download = `Monthly-Customer-List-${selectedMonthlyFilter}.png`;
-                link.href = dataUrl;
-                link.click();
-                showCustomModal('Monthly customer list saved successfully as image/PDF format.', 'Success');
-            }).catch(err => {
-                closeCustomModal();
-                showCustomModal('Failed to generate export file.', 'Error');
+            const sales = getSales();
+            let filtered = sales.filter(s => {
+                let dateStr = getFormattedDate(s.date);
+                return dateStr.startsWith(selectedMonthlyFilter);
             });
+
+            if (filtered.length === 0) {
+                showCustomModal('No data available to export for this month.', 'Warning');
+                return;
+            }
+
+            showCustomModal('Generating PDF file, please wait...', 'Exporting');
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(14);
+                doc.text(`Monthly Customer Report - ${formatDisplayMonthYear(selectedMonthlyFilter)}`, 14, 15);
+
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Shop Name: ${getActiveShopName()}`, 14, 22);
+                doc.text(`Exported Date: ${new Date().toLocaleDateString()}`, 14, 28);
+
+                let startY = 35;
+                doc.setFillColor(9, 44, 32);
+                doc.rect(14, startY, 182, 8, "F");
+                doc.setTextColor(255, 255, 255);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.text("No", 16, startY + 6);
+                doc.text("Invoice No", 28, startY + 6);
+                doc.text("Date", 65, startY + 6);
+                doc.text("Customer", 95, startY + 6);
+                doc.text("Items", 135, startY + 6);
+                doc.text("Amount", 170, startY + 6);
+
+                startY += 8;
+                doc.setTextColor(0, 0, 0);
+                doc.setFont("helvetica", "normal");
+
+                let totalSum = 0;
+                filtered.forEach((s, idx) => {
+                    if (startY > 270) {
+                        doc.addPage();
+                        startY = 20;
+                    }
+                    totalSum += Number(s.totalAmount) || 0;
+                    let itemsStr = (s.items || []).map(i => `${i.name} (${i.qty})`).join(', ');
+
+                    doc.text(String(idx + 1), 16, startY + 6);
+                    doc.text(String(s.invoiceNo || ''), 28, startY + 6);
+                    doc.text(String(getFormattedDate(s.date) || ''), 65, startY + 6);
+                    doc.text(String(s.customer || ''), 95, startY + 6);
+                    doc.text(String(itemsStr), 135, startY + 6, { maxWidth: 33 });
+                    doc.text(`${(Number(s.totalAmount) || 0).toLocaleString()} MMK`, 170, startY + 6);
+
+                    startY += 10;
+                });
+
+                startY += 5;
+                doc.setFont("helvetica", "bold");
+                doc.text(`Total Amount: ${totalSum.toLocaleString()} MMK`, 140, startY);
+
+                doc.save(`Monthly-Customer-Report-${selectedMonthlyFilter}.pdf`);
+                closeCustomModal();
+                showCustomModal('PDF file successfully downloaded.', 'Success');
+            } catch (err) {
+                closeCustomModal();
+                showCustomModal('Failed to generate PDF file.', 'Error');
+            }
         }
-        // ----------------------------------------------------
 
         let currentEditingSaleId = null;
         let currentEditingOptions = [];
@@ -3090,6 +3148,11 @@
                 const inputDate = document.getElementById('staff-sales-month-picker-display');
                 if(inputDate) inputDate.value = formatDisplayMonthYear(selectedStaffSalesMonthFilter);
                 renderStaffSalesSummaryPage();
+            } else if(mode === 'monthly') {
+                selectedMonthlyFilter = new Date().toISOString().slice(0, 7);
+                const inputDate = document.getElementById('monthly-customer-picker-display');
+                if(inputDate) inputDate.value = formatDisplayMonthYear(selectedMonthlyFilter);
+                renderMonthlyCustomerTableData();
             } else {
                 singleDateFilter = '';
                 appliedDateFilter = todayDefaultStr;
@@ -3182,8 +3245,10 @@
                 <div class="page-title-box"><h2><i class="fa-solid fa-chart-column" style="color: var(--primary-color);"></i> Staff Sales Summary</h2></div>
                 <div class="card">
                     <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 5px;"><i class="fa-solid fa-calendar"></i> Select Month</div>
+                    <!-- ပြင်ရန်ပုံ ၂: တစ်တန်းတည်းဖြစ်စေရန် Flexbox သုံးထားသည် -->
                     <div style="display: flex; gap: 6px; align-items: center;">
-                        <input type="text" id="staff-sales-month-picker-display" class="form-control" readonly value="${displayMonthVal}" onclick="openCustomMonthModal('staff_sales')" style="cursor: pointer; background: #fff;">
+                        <input type="text" id="staff-sales-month-picker-display" class="form-control" readonly value="${displayMonthVal}" onclick="openCustomMonthModal('staff_sales')" style="cursor: pointer; background: #fff; flex: 1;">
+                        <button type="button" onclick="clearDateFilter('staff-sales')" class="btn btn-primary" style="width: auto; padding: 7px 14px;" title="Reset"><i class="fa-solid fa-rotate-left"></i></button>
                     </div>
                 </div>
                 <div class="table-box">
