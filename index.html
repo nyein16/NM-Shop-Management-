@@ -2692,7 +2692,6 @@
                 doc.setFont("helvetica", "bold");
                 doc.text(`Total Amount: ${totalSum.toLocaleString()} MMK`, 130, startY);
 
-                // Blob URL ကို အသုံးပြုပြီး ဒေါင်းလုဒ်ဆွဲခြင်း (Browser များတွင် Error ကင်းစေရန်)
                 const pdfOutput = doc.output('blob');
                 const blobURL = URL.createObjectURL(pdfOutput);
                 
@@ -3697,7 +3696,10 @@
 
         async function executeRestore() {
             const txt = document.getElementById('restore-text-area').value.trim();
-            if(!txt) return;
+            if(!txt) {
+                showCustomModal('Please paste backup JSON data.', 'Warning');
+                return;
+            }
             try {
                 const parsed = JSON.parse(txt);
                 let owner = getOwnerName();
@@ -3712,14 +3714,15 @@
                 if(parsed.sales) {
                     parsed.sales.forEach(sale => {
                         let ref = db.collection('shops').doc(owner).collection('sales').doc(String(sale.id));
-                        batch.set(ref, item);
+                        batch.set(ref, sale);
                     });
                 }
                 await batch.commit();
                 closeCustomModal();
                 showCustomModal('Data restored successfully.', 'Success');
             } catch(e) {
-                showCustomModal('Invalid JSON format.', 'Error');
+                console.error(e);
+                showCustomModal('Invalid JSON format. Please check your backup text.', 'Error');
             }
         }
 
