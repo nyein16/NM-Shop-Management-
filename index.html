@@ -2467,7 +2467,7 @@
                 </div>
                 <div class="card">
                     <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 5px;"><i class="fa-solid fa-calendar"></i> Select Month</div>
-                    <!-- ပြင်ရန်ပုံ ၂: တစ်တန်းတည်းဖြစ်စေရန် Flexbox သုံးထားသည် -->
+                    <!-- တစ်တန်းတည်းဖြစ်စေရန် Flexbox သုံးထားသည် -->
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <input type="text" id="monthly-customer-picker-display" class="form-control" readonly value="${displayMonthVal}" onclick="openCustomMonthModal('monthly')" style="cursor: pointer; background: #fff; flex: 1;">
                         <button type="button" onclick="clearDateFilter('monthly')" class="btn btn-primary" style="width: auto; padding: 7px 14px;" title="Reset"><i class="fa-solid fa-rotate-left"></i></button>
@@ -2690,12 +2690,23 @@
 
                 startY += 5;
                 doc.setFont("helvetica", "bold");
-                doc.text(`Total Amount: ${totalSum.toLocaleString()} MMK`, 140, startY);
+                doc.text(`Total Amount: ${totalSum.toLocaleString()} MMK`, 130, startY);
 
-                doc.save(`Monthly-Customer-Report-${selectedMonthlyFilter}.pdf`);
+                // Blob URL ကို အသုံးပြုပြီး ဒေါင်းလုဒ်ဆွဲခြင်း (Browser များတွင် Error ကင်းစေရန်)
+                const pdfOutput = doc.output('blob');
+                const blobURL = URL.createObjectURL(pdfOutput);
+                
+                let link = document.createElement('a');
+                link.href = blobURL;
+                link.download = `Monthly-Customer-Report-${selectedMonthlyFilter}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
                 closeCustomModal();
                 showCustomModal('PDF file successfully downloaded.', 'Success');
             } catch (err) {
+                console.error(err);
                 closeCustomModal();
                 showCustomModal('Failed to generate PDF file.', 'Error');
             }
@@ -3245,7 +3256,7 @@
                 <div class="page-title-box"><h2><i class="fa-solid fa-chart-column" style="color: var(--primary-color);"></i> Staff Sales Summary</h2></div>
                 <div class="card">
                     <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 5px;"><i class="fa-solid fa-calendar"></i> Select Month</div>
-                    <!-- ပြင်ရန်ပုံ ၂: တစ်တန်းတည်းဖြစ်စေရန် Flexbox သုံးထားသည် -->
+                    <!-- တစ်တန်းတည်းဖြစ်စေရန် Flexbox သုံးထားသည် -->
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <input type="text" id="staff-sales-month-picker-display" class="form-control" readonly value="${displayMonthVal}" onclick="openCustomMonthModal('staff_sales')" style="cursor: pointer; background: #fff; flex: 1;">
                         <button type="button" onclick="clearDateFilter('staff-sales')" class="btn btn-primary" style="width: auto; padding: 7px 14px;" title="Reset"><i class="fa-solid fa-rotate-left"></i></button>
