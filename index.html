@@ -2144,9 +2144,24 @@
             });
         }
 
+        let selectedPaymentMethodVal = 'Cash';
+
         function renderSalesPage() {
             const curr = dict.currency;
             const contentArea = document.getElementById('content-area-container');
+            const isPro = currentUser.plan === 'pro';
+
+            let paymentMethodHtml = '';
+            if(isPro) {
+                paymentMethodHtml = `
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="color: var(--primary-color); font-weight: bold;"><i class="fa-solid fa-wallet"></i> Payment Method (Pro Plan)</label>
+                        <input type="text" id="sale-payment-method-display" readonly class="form-control" value="${selectedPaymentMethodVal}" onclick="openPaymentMethodSelectModal()" style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="sale-payment-method" value="${selectedPaymentMethodVal}">
+                    </div>
+                `;
+            }
+
             contentArea.innerHTML = `
                 <div class="page-title-box"><h2><i class="fa-solid fa-cash-register" style="color: var(--accent-glow);"></i> ${dict.selltitle}</h2></div>
                 <div class="card">
@@ -2178,6 +2193,7 @@
                             <label style="color: var(--primary-color); font-weight: bold;"><i class="fa-solid fa-percent"></i> ${dict.promo}</label>
                             <input type="number" id="sale-discount-percent" min="0" max="100" class="form-control" placeholder="0" oninput="renderCart()">
                         </div>
+                        ${paymentMethodHtml}
                         <div style="background: rgba(255, 255, 255, 0.6); padding: 10px 12px; border-radius: var(--ios-radius); display: flex; flex-direction: column; gap: 3px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-weight: bold; color: var(--text-muted);">${dict.totamount}</span>
@@ -2192,6 +2208,35 @@
                 </div>
             `;
             renderCart();
+        }
+
+        function openPaymentMethodSelectModal() {
+            const options = [
+                { val: 'Cash', text: 'Cash' },
+                { val: 'Kpay', text: 'Kpay' },
+                { val: 'Wave', text: 'Wave' },
+                { val: 'Banking', text: 'Banking' }
+            ];
+
+            document.getElementById('custom-select-title').innerHTML = `<span><i class="fa-solid fa-wallet"></i> Select Payment Method</span>`;
+            const container = document.getElementById('custom-select-options-container');
+            container.innerHTML = options.map(opt => `
+                <div class="custom-select-option ${selectedPaymentMethodVal === opt.val ? 'selected' : ''}" onclick="selectPaymentMethodOptionInSale('${opt.val}')">
+                    <span>${opt.text}</span>
+                    ${selectedPaymentMethodVal === opt.val ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-regular fa-circle"></i>'}
+                </div>
+            `).join('');
+
+            document.getElementById('custom-select-modal').classList.add('show');
+        }
+
+        function selectPaymentMethodOptionInSale(val) {
+            selectedPaymentMethodVal = val;
+            const displayInput = document.getElementById('sale-payment-method-display');
+            const hiddenInput = document.getElementById('sale-payment-method');
+            if(displayInput) displayInput.value = val;
+            if(hiddenInput) hiddenInput.value = val;
+            closeCustomSelectModal();
         }
 
         function openItemPicker() {
@@ -2293,6 +2338,7 @@
             const phone = document.getElementById('sale-phone').value.trim();
             const address = document.getElementById('sale-address').value.trim();
             const discountPercent = Number(document.getElementById('sale-discount-percent').value || 0);
+            const paymentMethod = document.getElementById('sale-payment-method')?.value || 'Cash';
 
             let inventory = getInventory();
             let subtotalAmount = 0, totalProfit = 0;
@@ -2325,6 +2371,7 @@
                 totalAmount: finalAmount, totalProfit,
                 originalTotalAmount: finalAmount,
                 originalTotalProfit: totalProfit,
+                paymentMethod: paymentMethod,
                 deliveryStatus: 'order',
                 createdBy: currentUser.name || currentUser.username,
                 statusHistory: [{
@@ -2439,6 +2486,7 @@
 
         // --- Monthly Customers Page & PDF Export Logic ---
         let selectedMonthlyFilter = new Date().toISOString().slice(0, 7); // e.g. "2026-10"
+        let monthlyPaymentMethodFilter = ''; // '', 'Cash', 'Kpay', 'Wave', 'Banking'
 
         function getMonthName(monthNumberStr) {
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -2459,6 +2507,7 @@
             const contentArea = document.getElementById('content-area-container');
 
             let displayMonthVal = formatDisplayMonthYear(selectedMonthlyFilter);
+            let payMethodDisplayLabel = monthlyPaymentMethodFilter ? monthlyPaymentMethodFilter : 'All Payment Methods';
 
             contentArea.innerHTML = `
                 <div class="page-title-box" style="flex-direction: row; justify-content: space-between; align-items: center;">
@@ -2466,10 +2515,15 @@
                     <button type="button" onclick="exportMonthlyCustomersPDF()" class="btn btn-success-custom" style="width: auto; padding: 6px 14px;"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
                 </div>
                 <div class="card">
-                    <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 5px;"><i class="fa-solid fa-calendar"></i> Select Month</div>
-                    <!-- တစ်တန်းတည်းဖြစ်စေရန် Flexbox သုံးထားသည် -->
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <input type="text" id="monthly-customer-picker-display" class="form-control" readonly value="${displayMonthVal}" onclick="openCustomMonthModal('monthly')" style="cursor: pointer; background: #fff; flex: 1;">
+                    <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 5px;"><i class="fa-solid fa-calendar"></i> Select Month & Payment Filter</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; align-items: center;">
+                        <input type="text" id="monthly-customer-picker-display" class="form-control" readonly value="${displayMonthVal}" onclick="openCustomMonthModal('monthly')" style="cursor: pointer; background: #fff;">
+                        
+                        <div>
+                            <input type="text" id="monthly-pay-filter-display" readonly class="form-control" value="${payMethodDisplayLabel}" onclick="openMonthlyPaymentFilterModal()" style="cursor: pointer; background: #fff;">
+                            <input type="hidden" id="monthly-pay-filter-val" value="${monthlyPaymentMethodFilter}">
+                        </div>
+
                         <button type="button" onclick="clearDateFilter('monthly')" class="btn btn-primary" style="width: auto; padding: 7px 14px;" title="Reset"><i class="fa-solid fa-rotate-left"></i></button>
                     </div>
                 </div>
@@ -2485,6 +2539,8 @@
                                     <th>${dict.thCust}</th>
                                     <th>${dict.thContact}</th>
                                     <th>${dict.thItems}</th>
+                                    <th>Method</th>
+                                    <th>Profit</th>
                                     <th>${dict.thAmount}</th>
                                 </tr>
                             </thead>
@@ -2494,11 +2550,42 @@
                         </table>
                     </div>
                     <div id="monthly-total-summary" style="margin-top: 10px; background: #fff; padding: 10px 14px; border-radius: var(--ios-card-radius); display: flex; justify-content: space-between; align-items: center; font-weight: bold; border: 1px solid #e2e8f0;">
-                        <span>Total Monthly Sales Amount:</span>
-                        <span id="monthly-total-amount-sum" style="color: var(--accent-glow); font-size: 14px;">0 ${curr}</span>
+                        <span>Total Monthly Sales Amount & Profit:</span>
+                        <span id="monthly-total-amount-sum" style="color: var(--accent-glow); font-size: 13px;">0 ${curr} (Profit: 0 ${curr})</span>
                     </div>
                 </div>
             `;
+            renderMonthlyCustomerTableData();
+        }
+
+        function openMonthlyPaymentFilterModal() {
+            const options = [
+                { val: '', text: 'All Payment Methods' },
+                { val: 'Cash', text: 'Cash' },
+                { val: 'Kpay', text: 'Kpay' },
+                { val: 'Wave', text: 'Wave' },
+                { val: 'Banking', text: 'Banking' }
+            ];
+
+            document.getElementById('custom-select-title').innerHTML = `<span><i class="fa-solid fa-filter"></i> Filter Payment Method</span>`;
+            const container = document.getElementById('custom-select-options-container');
+            container.innerHTML = options.map(opt => `
+                <div class="custom-select-option ${monthlyPaymentMethodFilter === opt.val ? 'selected' : ''}" onclick="selectMonthlyPaymentFilter('${opt.val}', '${opt.text}')">
+                    <span>${opt.text}</span>
+                    ${monthlyPaymentMethodFilter === opt.val ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-regular fa-circle"></i>'}
+                </div>
+            `).join('');
+
+            document.getElementById('custom-select-modal').classList.add('show');
+        }
+
+        function selectMonthlyPaymentFilter(val, text) {
+            monthlyPaymentMethodFilter = val;
+            const displayInput = document.getElementById('monthly-pay-filter-display');
+            const hiddenInput = document.getElementById('monthly-pay-filter-val');
+            if(displayInput) displayInput.value = text;
+            if(hiddenInput) hiddenInput.value = val;
+            closeCustomSelectModal();
             renderMonthlyCustomerTableData();
         }
 
@@ -2596,21 +2683,29 @@
                 return dateStr.startsWith(selectedMonthlyFilter);
             });
 
+            if (monthlyPaymentMethodFilter) {
+                filtered = filtered.filter(s => (s.paymentMethod || 'Cash') === monthlyPaymentMethodFilter);
+            }
+
             let totalAmountSum = 0;
+            let totalProfitSum = 0;
             filtered.forEach(s => {
                 totalAmountSum += (Number(s.totalAmount) || 0);
+                totalProfitSum += (Number(s.totalProfit) || 0);
             });
             const curr = dict.currency;
 
             let sumDisplay = document.getElementById('monthly-total-amount-sum');
-            if(sumDisplay) sumDisplay.innerText = `${totalAmountSum.toLocaleString()} ${curr}`;
+            if(sumDisplay) sumDisplay.innerText = `${totalAmountSum.toLocaleString()} ${curr} (Profit: ${totalProfitSum.toLocaleString()} ${curr})`;
 
             if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 12px;">No sales records found for this month</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 12px;">No sales records found for this month</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map((s, index) => {
+                let payMethodBadge = s.paymentMethod || 'Cash';
+                let profitVal = Number(s.totalProfit) || 0;
                 return `
                     <tr>
                         <td>${index + 1}</td>
@@ -2619,6 +2714,8 @@
                         <td><b>${s.customer}</b></td>
                         <td>${s.phone || '-'}<br><span style="font-size: 9px; color: var(--text-muted);">${s.address || '-'}</span></td>
                         <td>${(s.items || []).map(i => `${i.name} (${i.qty})`).join(', ')}</td>
+                        <td><span class="badge badge-purple">${payMethodBadge}</span></td>
+                        <td style="font-weight: bold; color: #166534;">${profitVal.toLocaleString()} ${curr}</td>
                         <td style="font-weight: bold; color: var(--accent-glow);">${(Number(s.totalAmount) || 0).toLocaleString()} ${curr}</td>
                     </tr>
                 `;
@@ -2631,6 +2728,10 @@
                 let dateStr = getFormattedDate(s.date);
                 return dateStr.startsWith(selectedMonthlyFilter);
             });
+
+            if (monthlyPaymentMethodFilter) {
+                filtered = filtered.filter(s => (s.paymentMethod || 'Cash') === monthlyPaymentMethodFilter);
+            }
 
             if (filtered.length === 0) {
                 showCustomModal('No data available to export for this month.', 'Warning');
@@ -2659,38 +2760,42 @@
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(9);
                 doc.text("No", 16, startY + 6);
-                doc.text("Invoice No", 28, startY + 6);
-                doc.text("Date", 65, startY + 6);
-                doc.text("Customer", 95, startY + 6);
-                doc.text("Items", 135, startY + 6);
-                doc.text("Amount", 170, startY + 6);
+                doc.text("Invoice No", 26, startY + 6);
+                doc.text("Date", 55, startY + 6);
+                doc.text("Customer", 80, startY + 6);
+                doc.text("Items", 115, startY + 6);
+                doc.text("Method", 150, startY + 6);
+                doc.text("Amount", 175, startY + 6);
 
                 startY += 8;
                 doc.setTextColor(0, 0, 0);
                 doc.setFont("helvetica", "normal");
 
                 let totalSum = 0;
+                let totalProfitSum = 0;
                 filtered.forEach((s, idx) => {
                     if (startY > 270) {
                         doc.addPage();
                         startY = 20;
                     }
                     totalSum += Number(s.totalAmount) || 0;
+                    totalProfitSum += Number(s.totalProfit) || 0;
                     let itemsStr = (s.items || []).map(i => `${i.name} (${i.qty})`).join(', ');
 
                     doc.text(String(idx + 1), 16, startY + 6);
-                    doc.text(String(s.invoiceNo || ''), 28, startY + 6);
-                    doc.text(String(getFormattedDate(s.date) || ''), 65, startY + 6);
-                    doc.text(String(s.customer || ''), 95, startY + 6);
-                    doc.text(String(itemsStr), 135, startY + 6, { maxWidth: 33 });
-                    doc.text(`${(Number(s.totalAmount) || 0).toLocaleString()} MMK`, 170, startY + 6);
+                    doc.text(String(s.invoiceNo || ''), 26, startY + 6);
+                    doc.text(String(getFormattedDate(s.date) || ''), 55, startY + 6);
+                    doc.text(String(s.customer || ''), 80, startY + 6);
+                    doc.text(String(itemsStr), 115, startY + 6, { maxWidth: 33 });
+                    doc.text(String(s.paymentMethod || 'Cash'), 150, startY + 6);
+                    doc.text(`${(Number(s.totalAmount) || 0).toLocaleString()} MMK`, 175, startY + 6);
 
                     startY += 10;
                 });
 
                 startY += 5;
                 doc.setFont("helvetica", "bold");
-                doc.text(`Total Amount: ${totalSum.toLocaleString()} MMK`, 130, startY);
+                doc.text(`Total Sales Amount: ${totalSum.toLocaleString()} MMK | Total Profit: ${totalProfitSum.toLocaleString()} MMK`, 90, startY);
 
                 const pdfOutput = doc.output('blob');
                 const blobURL = URL.createObjectURL(pdfOutput);
@@ -3160,8 +3265,11 @@
                 renderStaffSalesSummaryPage();
             } else if(mode === 'monthly') {
                 selectedMonthlyFilter = new Date().toISOString().slice(0, 7);
+                monthlyPaymentMethodFilter = '';
                 const inputDate = document.getElementById('monthly-customer-picker-display');
                 if(inputDate) inputDate.value = formatDisplayMonthYear(selectedMonthlyFilter);
+                const inputMethod = document.getElementById('monthly-pay-filter-display');
+                if(inputMethod) inputMethod.value = 'All Payment Methods';
                 renderMonthlyCustomerTableData();
             } else {
                 singleDateFilter = '';
