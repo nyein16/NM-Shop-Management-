@@ -1439,7 +1439,7 @@
                 <div class="page-title-box"><h2><i class="fa-solid fa-users-gear" style="color: var(--primary-color);"></i> ${dict.admAccounts}</h2></div>
                 <div class="table-box">
                     <table>
-                        <thead><tr><th>${dict.thNo}</th><th>Image</th><th>${dict.shopName}</th><th>${dict.phoneNo}</th><th>Username/Password</th><th>Status</th><th>Plan</th><th>Exp Date</th><th>${dict.thAction}</th></tr></thead>
+                        <thead><tr><th>${dict.thNo}</th><th>Image</th><th>${dict.shopName}</th><th>${dict.phoneNo}</th><th>Username</th><th>Status</th><th>Plan</th><th>Exp Date</th><th>${dict.thAction}</th></tr></thead>
                         <tbody>
                             ${shopUsers.length === 0 ? `<tr><td colspan="9" style="text-align:center; padding:12px;">No accounts found.</td></tr>` :
                                 shopUsers.map((u, idx) => {
@@ -1450,7 +1450,7 @@
                                         <tr>
                                             <td>${idx + 1}</td>
                                             <td>${u.profilePic ? `<img src="${u.profilePic}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;">` : `<div style="width:28px; height:28px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-shop"></i></div>`}</td>
-                                            <td><b>${u.name}</b></td><td>${u.phone}</td><td>${u.username} / <b style="color:var(--accent-glow);">${u.pass}</b></td>
+                                            <td><b>${u.name}</b></td><td>${u.phone}</td><td><b>${u.username}</b></td>
                                             <td><span class="badge ${u.status==='approved'?'badge-green':'badge-orange'}">${u.status}</span></td>
                                             <td><span class="badge ${planBadgeClass}"><b>${planDisplayLabel}</b></span></td>
                                             <td><b style="color: var(--primary-color);">${expDisplay}</b></td>
