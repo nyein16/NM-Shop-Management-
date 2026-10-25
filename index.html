@@ -789,8 +789,13 @@
         let systemSettings = JSON.parse(localStorage.getItem('nm_cached_settings')) || { 
             kpay: '09779964344 (Nyein Khant Kyaw)', 
             wave: '09779964344 (Nyein Khant Kyaw)', 
+            supportPhone: '09779964344',
+            supportTelegram: 'https://t.me/nmshopmanagement',
             pricingPlans: defaultPricingPlans
         };
+
+        if(!systemSettings.supportPhone) systemSettings.supportPhone = '09779964344';
+        if(!systemSettings.supportTelegram) systemSettings.supportTelegram = 'https://t.me/nmshopmanagement';
 
         if(!systemSettings.pricingPlans) {
             systemSettings.pricingPlans = defaultPricingPlans;
@@ -946,6 +951,8 @@
                 if (doc.exists) {
                     systemSettings = { ...systemSettings, ...doc.data() };
                     if(!systemSettings.pricingPlans) systemSettings.pricingPlans = defaultPricingPlans;
+                    if(!systemSettings.supportPhone) systemSettings.supportPhone = '09779964344';
+                    if(!systemSettings.supportTelegram) systemSettings.supportTelegram = 'https://t.me/nmshopmanagement';
                     systemSettings.pricingPlans.sort((a, b) => a.months - b.months);
                     localStorage.setItem('nm_cached_settings', JSON.stringify(systemSettings));
                     refreshCurrentPageView();
@@ -1069,6 +1076,8 @@
                 if (setDoc.exists) {
                     systemSettings = { ...systemSettings, ...setDoc.data() };
                     if(!systemSettings.pricingPlans) systemSettings.pricingPlans = defaultPricingPlans;
+                    if(!systemSettings.supportPhone) systemSettings.supportPhone = '09779964344';
+                    if(!systemSettings.supportTelegram) systemSettings.supportTelegram = 'https://t.me/nmshopmanagement';
                     systemSettings.pricingPlans.sort((a, b) => a.months - b.months);
                     localStorage.setItem('nm_cached_settings', JSON.stringify(systemSettings));
                 }
@@ -1092,7 +1101,6 @@
         let calMonth = new Date().getMonth();
         let activeCalendarMode = 'history';
 
-        // Staff Sales Summary Month-Year filter state
         let selectedStaffSalesMonthFilter = new Date().toISOString().slice(0, 7);
 
         function getFormattedDate(d) {
@@ -1729,6 +1737,14 @@
                     <button type="button" onclick="saveAdminSettings()" class="btn btn-primary" style="margin-top:6px;">${dict.saveSetBtn}</button>
                 </div>
                 
+                <!-- Support Contact & Telegram Link Configuration Settings -->
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-headset"></i> Support Contact & Link Settings</div>
+                    <div class="form-group"><label>Support Phone Number</label><input type="text" id="set-support-phone" class="form-control" value="${systemSettings.supportPhone || '09779964344'}"></div>
+                    <div class="form-group"><label>Telegram Channel Link</label><input type="text" id="set-support-telegram" class="form-control" value="${systemSettings.supportTelegram || 'https://t.me/nmshopmanagement'}"></div>
+                    <button type="button" onclick="saveAdminSupportSettings()" class="btn btn-primary" style="margin-top:6px;">Save Support Settings</button>
+                </div>
+
                 <div class="card">
                     <div class="card-title"><i class="fa-solid fa-tags"></i> Pro Plan Pricing Settings</div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; align-items: end; margin-bottom: 8px;">
@@ -1767,6 +1783,14 @@
                     <button type="button" onclick="logoutApp()" class="btn btn-danger" style="background: rgba(248, 113, 113, 0.2); color: #dc2626; border-color: rgba(248, 113, 113, 0.4);"><i class="fa-solid fa-right-from-bracket"></i> ${dict.logout}</button>
                 </div>
             `;
+        }
+
+        async function saveAdminSupportSettings() {
+            systemSettings.supportPhone = document.getElementById('set-support-phone').value.trim();
+            systemSettings.supportTelegram = document.getElementById('set-support-telegram').value.trim();
+            await db.collection('settings').doc('system').set(systemSettings, { merge: true });
+            localStorage.setItem('nm_cached_settings', JSON.stringify(systemSettings));
+            showCustomModal('Support settings saved successfully.', 'Success');
         }
 
         async function addNewPricingPlan() {
@@ -2484,9 +2508,8 @@
             }).join('');
         }
 
-        // --- Monthly Customers Page & PDF Export Logic ---
-        let selectedMonthlyFilter = new Date().toISOString().slice(0, 7); // e.g. "2026-10"
-        let monthlyPaymentMethodFilter = ''; // '', 'Cash', 'Kpay', 'Wave', 'Banking'
+        let selectedMonthlyFilter = new Date().toISOString().slice(0, 7);
+        let monthlyPaymentMethodFilter = '';
 
         function getMonthName(monthNumberStr) {
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -2545,7 +2568,6 @@
                                 </tr>
                             </thead>
                             <tbody id="monthly-customer-tbody">
-                                <!-- Data rendered dynamically -->
                             </tbody>
                         </table>
                     </div>
@@ -2591,7 +2613,7 @@
 
         let tempSelectedMonth = '10';
         let tempSelectedYear = '2026';
-        let activeMonthPickerTarget = 'monthly'; // 'monthly' or 'staff_sales'
+        let activeMonthPickerTarget = 'monthly';
 
         function openCustomMonthModal(target = 'monthly') {
             activeMonthPickerTarget = target;
@@ -3363,7 +3385,6 @@
                 <div class="page-title-box"><h2><i class="fa-solid fa-chart-column" style="color: var(--primary-color);"></i> Staff Sales Summary</h2></div>
                 <div class="card">
                     <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 5px;"><i class="fa-solid fa-calendar"></i> Select Month</div>
-                    <!-- တစ်တန်းတည်းဖြစ်စေရန် Flexbox သုံးထားသည် -->
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <input type="text" id="staff-sales-month-picker-display" class="form-control" readonly value="${displayMonthVal}" onclick="openCustomMonthModal('staff_sales')" style="cursor: pointer; background: #fff; flex: 1;">
                         <button type="button" onclick="clearDateFilter('staff-sales')" class="btn btn-primary" style="width: auto; padding: 7px 14px;" title="Reset"><i class="fa-solid fa-rotate-left"></i></button>
@@ -3738,9 +3759,28 @@
                 `;
             }
 
+            let sPhone = systemSettings.supportPhone || '09779964344';
+            let sTelegram = systemSettings.supportTelegram || 'https://t.me/nmshopmanagement';
+
             contentArea.innerHTML = `
                 <div class="page-title-box"><h2><i class="fa-solid fa-gear" style="color: var(--primary-color);"></i> ${dict.setttitle}</h2></div>
                 ${themePickerHtml}
+
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-headset"></i> Support Information</div>
+                    <div style="font-size: 11px; color: #4a5568; margin-bottom: 8px;">Contact via phone number or link below.</div>
+                    
+                    <div style="background: rgba(45, 106, 79, 0.08); padding: 10px; border-radius: 10px; border: 1px solid rgba(45, 106, 79, 0.2); margin-bottom: 8px;">
+                        <div style="font-size: 10px; color: #475569; margin-bottom: 2px;">Phone Number</div>
+                        <a href="tel:${sPhone}" style="font-size: 13px; font-weight: bold; color: var(--primary-color); text-decoration: none;">${sPhone}</a>
+                    </div>
+
+                    <div style="background: rgba(45, 106, 79, 0.08); padding: 10px; border-radius: 10px; border: 1px solid rgba(45, 106, 79, 0.2);">
+                        <div style="font-size: 10px; color: #475569; margin-bottom: 2px;">Telegram Channel</div>
+                        <a href="${sTelegram}" target="_blank" style="font-size: 12px; font-weight: bold; color: #0284c7; text-decoration: underline; word-break: break-all;">${sTelegram}</a>
+                    </div>
+                </div>
+
                 ${currentUser.role !== 'staff' ? `
                     <div class="card">
                         <div class="card-title"><i class="fa-solid fa-download"></i> ${dict.backuptitle}</div>
