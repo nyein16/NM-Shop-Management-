@@ -347,6 +347,24 @@
         .inv-table th { background: #f8fafc; color: #475569; font-size: 9px; padding: 5px; border-bottom: 1px solid #e2e8f0; }
         .inv-table td { padding: 5px; font-size: 10px; border-bottom: 1px dashed #f1f5f9; }
         .inv-total { border-top: 2px dashed #cbd5e1; padding-top: 8px; display: flex; flex-direction: column; gap: 5px; font-weight: bold; font-size: 13px; color: var(--primary-color); }
+        .sale-all-paid-check {
+            appearance: none; -webkit-appearance: none; width: 19px; height: 19px; flex: 0 0 19px;
+            border: 2px solid var(--primary-color); border-radius: 50%; background: #fff; cursor: pointer;
+            display: inline-grid; place-content: center; transition: all .18s ease; margin: 0;
+        }
+        .sale-all-paid-check::before {
+            content: ""; width: 8px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+            transform: rotate(-45deg) scale(0); transform-origin: center; margin-top: -2px;
+            transition: transform .15s ease;
+        }
+        .sale-all-paid-check:checked { border-color: var(--accent-glow); background: var(--primary-color); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-glow) 20%, transparent); }
+        .sale-all-paid-check:checked::before { transform: rotate(-45deg) scale(1); }
+        .all-paid-stamp {
+            display: inline-flex; align-items: center; justify-content: center; padding: 5px 12px;
+            border: 2px solid var(--accent-glow); border-radius: 6px; color: var(--primary-color);
+            font-size: 12px; font-weight: 900; letter-spacing: 1.5px; transform: rotate(-5deg);
+            text-transform: uppercase; background: rgba(16,185,129,.08); box-shadow: inset 0 0 0 1px var(--primary-color);
+        }
         .selector-item {
             padding: 9px 12px; border-radius: var(--ios-radius); cursor: pointer;
             font-size: 12px; font-weight: bold; color: #1c2826;
@@ -604,6 +622,9 @@
                         <div><b><span class="t-invdate">Date</span>:</b> <span id="inv-date"></span></div>
                         <div><b><span class="t-invcust">Customer</span>:</b> <span id="inv-customer"></span></div>
                         <div><b><span class="t-invcontact">Phone/Address</span>:</b> <span id="inv-contact"></span></div>
+                        <div id="inv-all-paid-stamp-row" style="display:none; justify-content:center; padding:8px 0 3px;">
+                            <span class="all-paid-stamp">ALL PAID</span>
+                        </div>
                     </div>
                     <table class="inv-table">
                         <thead>
@@ -627,6 +648,12 @@
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span class="t-invtotal">Total</span>
                             <span id="inv-total-price">0 <span class="currency-unit">MMK</span></span>
+                        </div>
+                        <div id="inv-paid-row" style="display:none; justify-content:space-between; font-size:11px; color:#166534; font-weight:normal;">
+                            <span>Paid Amount</span><span id="inv-paid-price"></span>
+                        </div>
+                        <div id="inv-balance-row" style="display:none; justify-content:space-between; font-size:12px; color:#b45309; font-weight:bold;">
+                            <span>Balance Due</span><span id="inv-balance-price"></span>
                         </div>
                     </div>
                     <div class="inv-footer" style="text-align: center; margin-top: 12px; font-size: 9px; color: #94a3b8;">
@@ -2218,6 +2245,17 @@
                             <input type="number" id="sale-discount-percent" min="0" max="100" class="form-control" placeholder="0" oninput="renderCart()">
                         </div>
                         ${paymentMethodHtml}
+                        <div id="sale-payment-details" class="form-group" style="display:none; margin-bottom:0; padding:10px; border:1px solid #d8e6dc; border-radius:12px; background:#f8fcf9;">
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:bold; color:var(--primary-color);">
+                                <input type="checkbox" id="sale-all-paid" class="sale-all-paid-check" checked onchange="toggleSalePaidAmount()">
+                                All Paid
+                            </label>
+                            <div class="form-group" style="margin:8px 0 0;">
+                                <label>Paid Amount</label>
+                                <input type="number" id="sale-paid-amount" min="0" step="1" class="form-control" placeholder="Enter paid amount" disabled oninput="updateSaleBalancePreview()">
+                            </div>
+                            <div id="sale-balance-preview" style="font-weight:bold;color:#b45309;margin-top:6px;font-size:11px;"></div>
+                        </div>
                         <div style="background: rgba(255, 255, 255, 0.6); padding: 10px 12px; border-radius: var(--ios-radius); display: flex; flex-direction: column; gap: 3px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-weight: bold; color: var(--text-muted);">${dict.totamount}</span>
@@ -2261,6 +2299,52 @@
             if(displayInput) displayInput.value = val;
             if(hiddenInput) hiddenInput.value = val;
             closeCustomSelectModal();
+            updateSalePaymentFields();
+        }
+
+        function updateSalePaymentFields() {
+            const box = document.getElementById('sale-payment-details');
+            if (!box) return;
+            const isProNonCash = currentUser && currentUser.plan === 'pro' &&
+                (document.getElementById('sale-payment-method')?.value || 'Cash') !== 'Cash';
+            box.style.display = isProNonCash ? 'block' : 'none';
+            if (isProNonCash) {
+                const allPaid = document.getElementById('sale-all-paid');
+                const amount = document.getElementById('sale-paid-amount');
+                const totalText = document.getElementById('sale-total-amount')?.innerText || '0';
+                const total = Number(totalText.replace(/[^0-9.-]/g, '')) || 0;
+                if (allPaid && amount) {
+                    if (allPaid.checked) {
+                        amount.value = String(total);
+                        amount.disabled = true;
+                    } else {
+                        amount.disabled = false;
+                    }
+                }
+                updateSaleBalancePreview();
+            }
+        }
+
+        function toggleSalePaidAmount() {
+            const allPaid = document.getElementById('sale-all-paid');
+            const amount = document.getElementById('sale-paid-amount');
+            if (!allPaid || !amount) return;
+            amount.disabled = allPaid.checked;
+            if (allPaid.checked) {
+                const totalText = document.getElementById('sale-total-amount')?.innerText || '0';
+                amount.value = String(Number(totalText.replace(/[^0-9.-]/g, '')) || 0);
+            } else {
+                amount.value = '';
+            }
+            updateSaleBalancePreview();
+        }
+
+        function updateSaleBalancePreview() {
+            const totalText = document.getElementById('sale-total-amount')?.innerText || '0';
+            const total = Number(totalText.replace(/[^0-9.-]/g, '')) || 0;
+            const paid = Number(document.getElementById('sale-paid-amount')?.value || 0);
+            const preview = document.getElementById('sale-balance-preview');
+            if (preview) preview.textContent = `Balance Due: ${Math.max(0, total - paid).toLocaleString()} ${curr}`;
         }
 
         function openItemPicker() {
@@ -2353,6 +2437,7 @@
                 if(prev) prev.style.display = 'none';
             }
             document.getElementById('sale-total-amount').innerHTML = `${finalTotal.toLocaleString()} <span class="currency-unit">${curr}</span>`;
+            updateSalePaymentFields();
         }
 
         async function recordSale(e) {
@@ -2363,6 +2448,13 @@
             const address = document.getElementById('sale-address').value.trim();
             const discountPercent = Number(document.getElementById('sale-discount-percent').value || 0);
             const paymentMethod = document.getElementById('sale-payment-method')?.value || 'Cash';
+            const usesPartialPayment = currentUser.plan === 'pro' && paymentMethod !== 'Cash';
+            const saleTotalPreview = Number((document.getElementById('sale-total-amount')?.innerText || '0').replace(/[^0-9.-]/g, '')) || 0;
+            const allPaid = usesPartialPayment ? !!document.getElementById('sale-all-paid')?.checked : true;
+            const paidAmountInput = Number(document.getElementById('sale-paid-amount')?.value || 0);
+            if (usesPartialPayment && (!allPaid && (paidAmountInput < 0 || paidAmountInput > saleTotalPreview))) {
+                showCustomModal('Paid amount must be between 0 and the total amount.', 'Warning'); return;
+            }
 
             let inventory = getInventory();
             let subtotalAmount = 0, totalProfit = 0;
@@ -2393,6 +2485,11 @@
                 customer, phone: phone || '-', address: address || '-',
                 items: [...cart], subtotalAmount, discountPercent, discountVal,
                 totalAmount: finalAmount, totalProfit,
+                ...(usesPartialPayment ? {
+                    allPaid: allPaid,
+                    paidAmount: allPaid ? finalAmount : paidAmountInput,
+                    balanceDue: Math.max(0, finalAmount - (allPaid ? finalAmount : paidAmountInput))
+                } : {}),
                 originalTotalAmount: finalAmount,
                 originalTotalProfit: totalProfit,
                 paymentMethod: paymentMethod,
@@ -3183,6 +3280,17 @@
                 document.getElementById('inv-discount-row').style.display = 'none';
             }
             document.getElementById('inv-total-price').innerHTML = `${(Number(sale.totalAmount) || 0).toLocaleString()} <span class="currency-unit">${curr}</span>`;
+            const showPaymentBreakdown = currentUser && currentUser.plan === 'pro' && sale.paymentMethod && sale.paymentMethod !== 'Cash' && Number.isFinite(Number(sale.paidAmount));
+            const paidStampRow = document.getElementById('inv-all-paid-stamp-row');
+            if (paidStampRow) paidStampRow.style.display = showPaymentBreakdown && sale.allPaid === true ? 'flex' : 'none';
+            const paidRow = document.getElementById('inv-paid-row');
+            const balanceRow = document.getElementById('inv-balance-row');
+            if (paidRow) paidRow.style.display = showPaymentBreakdown ? 'flex' : 'none';
+            if (balanceRow) balanceRow.style.display = showPaymentBreakdown ? 'flex' : 'none';
+            if (showPaymentBreakdown) {
+                document.getElementById('inv-paid-price').innerHTML = `${Number(sale.paidAmount || 0).toLocaleString()} <span class="currency-unit">${curr}</span>`;
+                document.getElementById('inv-balance-price').innerHTML = `${Number(sale.balanceDue || 0).toLocaleString()} <span class="currency-unit">${curr}</span>`;
+            }
             document.getElementById('invoice-card-container').style.display = 'block';
             document.getElementById('img-result-box').style.display = 'none';
             document.getElementById('modal-footer-btn').style.display = 'flex';
